@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, useImperativeHandle, forwardRef } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useImperativeHandle,
+  forwardRef,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { Bridge } from "../types/bridge.types";
 import { authService } from "../services/authService";
@@ -17,7 +23,10 @@ export interface BridgedIframeHandle {
   }) => Promise<unknown>;
 }
 
-export const BridgedIframe = forwardRef<BridgedIframeHandle, BridgedIframeProps>(({ src, className }, ref) => {
+export const BridgedIframe = forwardRef<
+  BridgedIframeHandle,
+  BridgedIframeProps
+>(({ src, className }, ref) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const bridgeRef = useRef<Bridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
@@ -71,16 +80,30 @@ export const BridgedIframe = forwardRef<BridgedIframeHandle, BridgedIframeProps>
     });
 
     bridge.addRequestHandler("navigation.go", async ({ payload }) => {
-      const { feature, focus, extra, params } = payload;
-      //supported route
+      const { feature, focus, extra, params } = payload as {
+        feature: string;
+        focus: string;
+        extra: string;
+        params: Record<string, any>;
+      };
 
-      if (feature === "vatom") {
-        return { feature, focus, extra, params };
+      if (
+        feature === "ar" ||
+        feature === "ar-face-filter" ||
+        feature === "ar-wearable" ||
+        feature === "ar-engaged" ||
+        feature === "eight-wall"
+      ) {
+        alert("Request to goto " + feature + " rejected");
+        return {};
       }
+      //supported route
+      return { feature, focus, extra, params };
+    });
 
-      alert("Request to goto " + feature + " rejected");
-
-      //override route response and handle 
+    bridge.addRequestHandler("navigation.open", async ({ payload }) => {
+      const { url } = payload;
+      window.open(url, "_blank");
       return {};
     });
 
@@ -119,7 +142,7 @@ export const BridgedIframe = forwardRef<BridgedIframeHandle, BridgedIframeProps>
       src={iframeSrc || undefined}
       className={className}
       title="Embedded Content"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share"
     />
   );
 });

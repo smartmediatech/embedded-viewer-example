@@ -1,7 +1,7 @@
 import { LoginCredentials, AuthResponse, User, ApiLoginPayload, ApiLoginResponse } from '../types/auth.types';
 
 const API_BASE_URL = 'https://b.smartmedialabs.io';
-const APP_ID = 'fa7e0f5a-d672-4c70-96d4-7bdfe251b476';
+const APP_ID = '46fcb627-b237-4706-8175-299801d97cb5';
 
 // Authentication service
 class AuthService {
