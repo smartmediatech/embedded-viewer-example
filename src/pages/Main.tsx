@@ -29,6 +29,14 @@ export const Main = () => {
     }
   };
 
+    const handleGoToDiscover = async () => {
+      try {
+        await iframeRef.current?.goTo({ feature: "discover" });
+      } catch (error) {
+        console.error("Navigation to map failed:", error);
+      }
+    };
+
   const handleGoToInventory = async () => {
     try {
       await iframeRef.current?.goTo({ feature: 'inventory' });
@@ -49,6 +57,12 @@ export const Main = () => {
             </div>
           </div>
           <div className="flex items-center gap-3">
+                        <button
+              onClick={handleGoToDiscover}
+              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40"
+            >
+              Go to Discover
+            </button>
             <button
               onClick={handleGoToMap}
               className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40"
@@ -77,7 +91,7 @@ export const Main = () => {
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
           <BridgedIframe
             ref={iframeRef}
-            src="https://embedded.smartmedialabs.io/testing.alpha/#/inventory"
+            src="https://embedded.smartmedialabs.io/fifasandbox.beta/#/discover"
             className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
           />
         </div>
