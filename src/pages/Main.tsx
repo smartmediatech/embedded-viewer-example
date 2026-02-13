@@ -1,7 +1,10 @@
-import { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { BridgedIframe, BridgedIframeHandle } from '../components/BridgedIframe';
+import { useState, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  BridgedIframe,
+  BridgedIframeHandle,
+} from "../components/BridgedIframe";
 
 export const Main = () => {
   const [loading, setLoading] = useState(false);
@@ -13,9 +16,9 @@ export const Main = () => {
     setLoading(true);
     try {
       await logout();
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     } finally {
       setLoading(false);
     }
@@ -23,41 +26,77 @@ export const Main = () => {
 
   const handleGoToMap = async () => {
     try {
-      await iframeRef.current?.goTo({ feature: 'map' });
+      await iframeRef.current?.goTo({ feature: "map" });
     } catch (error) {
-      console.error('Navigation to map failed:', error);
+      console.error("Navigation to map failed:", error);
     }
   };
 
-    const handleGoToDiscover = async () => {
-      try {
-        await iframeRef.current?.goTo({ feature: "discover" });
-      } catch (error) {
-        console.error("Navigation to map failed:", error);
-      }
-    };
+  const handleGoToDiscover = async () => {
+    try {
+      await iframeRef.current?.goTo({ feature: "discover" });
+    } catch (error) {
+      console.error("Navigation to map failed:", error);
+    }
+  };
 
   const handleGoToInventory = async () => {
     try {
-      await iframeRef.current?.goTo({ feature: 'inventory' });
+      await iframeRef.current?.goTo({ feature: "inventory" });
     } catch (error) {
-      console.error('Navigation to inventory failed:', error);
+      console.error("Navigation to inventory failed:", error);
     }
+  };
+
+  const handleGoToChallenges = () => {
+    navigate("/challenges");
+  };
+
+  const handleGoToDiscoverPage = () => {
+    navigate("/discover");
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">
       {/* Header */}
       <header className="bg-white shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-gray-800">{user?.name}</span>
-              <span className="text-xs text-gray-500">{user?.email}</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Top Bar - Only Challenges and Logout */}
+          <div className="py-4 flex justify-between items-center border-b border-gray-200">
+            <div className="flex items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-sm font-semibold text-gray-800">
+                  {user?.name}
+                </span>
+                <span className="text-xs text-gray-500">{user?.email}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={handleGoToChallenges}
+                className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/40"
+              >
+                Go to Challenges
+              </button>
+              <button
+                onClick={handleGoToDiscoverPage}
+                className="px-4 py-2 bg-gradient-to-r from-teal-600 to-teal-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-teal-500/40"
+              >
+                Go to Discover Page
+              </button>
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                disabled={loading}
+              >
+                {loading ? "Logging out..." : "Logout"}
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-                        <button
+
+          {/* Second Row - Other Navigation */}
+          <div className="py-3 flex justify-center items-center gap-3">
+            <button
               onClick={handleGoToDiscover}
               className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40"
             >
@@ -74,13 +113,6 @@ export const Main = () => {
               className="px-4 py-2 bg-gradient-to-r from-green-600 to-green-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-green-500/40"
             >
               Go to Inventory
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-              disabled={loading}
-            >
-              {loading ? 'Logging out...' : 'Logout'}
             </button>
           </div>
         </div>

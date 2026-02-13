@@ -14,17 +14,3 @@ export interface Bridge {
   sendRequest: (name: string, payload: Record<string, any>) => Promise<Record<string, any>>;
 }
 
-declare global {
-  interface Window {
-    SMTBaseBridge?: {
-      ParentBridge: new (
-        iframe: HTMLIFrameElement,
-        config: { origin: string; meta?: Record<string, unknown> }
-      ) => Bridge;
-      ChildBridge: new (config: {
-        origin: string;
-        meta?: Record<string, unknown>;
-      }) => Bridge;
-    };
-  }
-}
