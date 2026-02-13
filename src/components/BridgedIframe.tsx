@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import ParentBridge from "@/types/smt-base-bridge/parent-bridge";
 import type BridgeError from "@/types/smt-base-bridge/model/bridge-error";
+import Swal from "sweetalert2";
 
 interface BridgedIframeProps {
   src: string;
@@ -145,6 +146,29 @@ export const BridgedIframe = forwardRef<
       return new BridgeError("NOT_SUPPORTED", "alert.inform is not supported");
     });
 
+    // Register loader handlers
+    bridge.addRequestHandler("loader.show", async ({ payload }) => {
+      const { label } = payload as { label: string };
+      
+      Swal.fire({
+        title: label || "Loading...",
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        allowEnterKey: false,
+        showConfirmButton: false,
+        didOpen: () => {
+          Swal.showLoading();
+        },
+      });
+      
+      return {};
+    });
+
+    bridge.addRequestHandler("loader.hide", async () => {
+      Swal.close();
+      return {};
+    });
+
     console.log("Bridge handlers registered successfully");
 
     // Now that bridge is configured, set the iframe src
@@ -161,7 +185,11 @@ export const BridgedIframe = forwardRef<
         bridgeRef.current.removeRequestHandler("alert.notifyDetail");
         bridgeRef.current.removeRequestHandler("alert.confirm");
         bridgeRef.current.removeRequestHandler("alert.inform");
+        bridgeRef.current.removeRequestHandler("loader.show");
+        bridgeRef.current.removeRequestHandler("loader.hide");
       }
+      // Close any open SweetAlert modals on cleanup
+      Swal.close();
     };
   }, [src, navigate]);
 
