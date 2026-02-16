@@ -3,6 +3,8 @@ import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Login } from './pages/Login';
 import { Main } from './pages/Main';
+import { Challenges } from './pages/Challenges';
+import { Discover } from './pages/Discover';
 
 function App() {
   return (
@@ -15,6 +17,22 @@ function App() {
             element={
               <ProtectedRoute>
                 <Main />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/challenges"
+            element={
+              <ProtectedRoute>
+                <Challenges />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discover"
+            element={
+              <ProtectedRoute>
+                <Discover />
               </ProtectedRoute>
             }
           />
