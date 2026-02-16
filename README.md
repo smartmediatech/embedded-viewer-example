@@ -32,7 +32,7 @@ Configure the App ID and Embedded Viewer URL in `src/services/authService.ts`:
 
 ```typescript
 export const API_BASE_URL = "https://b.smartmedialabs.io";
-export const APP_ID = "29512c85-0f45-44ff-a2d5-8269f2476116";
+export const APP_ID = "46fcb627-b237-4706-8175-299801d97cb5";
 export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandbox.beta/";
 ```
 
