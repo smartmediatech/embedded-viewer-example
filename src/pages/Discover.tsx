@@ -6,10 +6,15 @@ import {
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
 
+const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components";
+
 export const Discover = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [modalFocus, setModalFocus] = useState<string>("");
+  const [modalFocus, setModalFocus] = useState<{
+    id: string;
+    type: "card" | "reward";
+  }>();
   const [modalDimensions, setModalDimensions] = useState({
     width: 0,
     height: 0,
@@ -99,12 +104,15 @@ export const Discover = () => {
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
           <BridgedIframe
             ref={iframeRef}
-            src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/"
+            src={`${host}/discover/`}
             className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
             onNavigation={async (feature, focus) => {
               console.log("on navigation", feature, focus);
               if (feature === "engaged" && focus) {
-                setModalFocus(focus);
+                setModalFocus({ id: focus, type: "card" });
+                setShowModal(true);
+              } else if (feature === "reward" && focus) {
+                setModalFocus({ id: focus, type: "reward" });
                 setShowModal(true);
               }
               return undefined;
@@ -137,10 +145,28 @@ export const Discover = () => {
             </button>
 
             {/* BridgedIframe in modal */}
-            <BridgedIframe
-              src={`https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=${modalFocus}`}
-              className="w-full h-full rounded-lg shadow-2xl border-0"
-            />
+            {modalFocus?.type === "card" && (
+              <BridgedIframe
+                src={`${host}/card/?id=${modalFocus.id}`}
+                className="w-full h-full rounded-lg shadow-2xl border-0"
+              />
+            )}
+            {modalFocus?.type === "reward" && (
+              <BridgedIframe
+                src={`${host}/reward/?id=${modalFocus.id}`}
+                className="w-full h-full rounded-lg shadow-2xl border-0"
+                onNavigation={async (feature, focus) => {
+                  if (feature === "discover") {
+                    setModalFocus(undefined);
+                    setShowModal(false);
+                  } else if (feature === "engaged" && focus) {
+                    setModalFocus({ id: focus, type: "card" });
+                    setShowModal(true);
+                  }
+                  return undefined;
+                }}
+              />
+            )}
           </div>
         </div>
       )}

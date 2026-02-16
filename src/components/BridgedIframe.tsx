@@ -8,7 +8,6 @@ import {
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
 import ParentBridge from "@/types/smt-base-bridge/parent-bridge";
-import type BridgeError from "@/types/smt-base-bridge/model/bridge-error";
 import Swal from "sweetalert2";
 
 interface BridgedIframeProps {
