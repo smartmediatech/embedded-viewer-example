@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import clsx from "clsx";
 import { useAuth } from "../context/AuthContext";
 import {
   BridgedIframe,
@@ -10,11 +11,12 @@ const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components";
 
 export const Discover = () => {
   const [loading, setLoading] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [modalFocus, setModalFocus] = useState<{
+  const [showModal, setShowModal] = useState<{
     id: string;
     type: "card" | "reward";
+    fullscreen?: boolean;
   }>();
+
   const [modalDimensions, setModalDimensions] = useState({
     width: 0,
     height: 0,
@@ -47,8 +49,8 @@ export const Discover = () => {
       const aspectRatio = 10 / 16;
 
       // Leave some padding (e.g., 80px on each side)
-      const maxWidth = windowWidth - 160;
-      const maxHeight = windowHeight - 160;
+      const maxWidth = windowWidth - 20;
+      const maxHeight = windowHeight - 80;
 
       let width = maxWidth;
       let height = width / aspectRatio;
@@ -109,11 +111,9 @@ export const Discover = () => {
             onNavigation={async (feature, focus) => {
               console.log("on navigation", feature, focus);
               if (feature === "engaged" && focus) {
-                setModalFocus({ id: focus, type: "card" });
-                setShowModal(true);
+                setShowModal({ id: focus, type: "card" });
               } else if (feature === "reward" && focus) {
-                setModalFocus({ id: focus, type: "reward" });
-                setShowModal(true);
+                setShowModal({ id: focus, type: "reward", fullscreen: true });
               }
               return undefined;
             }}
@@ -125,43 +125,51 @@ export const Discover = () => {
       {showModal && (
         <div
           className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
-          onClick={() => setShowModal(false)}
+          onClick={() => setShowModal(undefined)}
         >
           <div
             className="relative"
-            style={{
-              width: `${modalDimensions.width}px`,
-              height: `${modalDimensions.height}px`,
-            }}
+            style={
+              !showModal?.fullscreen
+                ? {
+                    width: `${modalDimensions.width}px`,
+                    height: `${modalDimensions.height}px`,
+                  }
+                : {
+                    width: "100%",
+                    height: "100%",
+                  }
+            }
             onClick={(e) => e.stopPropagation()}
           >
             {/* Close button */}
             <button
-              onClick={() => setShowModal(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl font-bold z-10"
+              onClick={() => setShowModal(undefined)}
+              className={clsx(
+                showModal.fullscreen ? "top-0" : "-top-12",
+                "absolute right-0 text-white hover:text-gray-300 text-2xl font-bold z-10 p-2",
+              )}
               aria-label="Close modal"
             >
               ✕
             </button>
 
             {/* BridgedIframe in modal */}
-            {modalFocus?.type === "card" && (
+            {showModal?.type === "card" && (
               <BridgedIframe
-                src={`${host}/card/?id=${modalFocus.id}`}
+                src={`${host}/card/?id=${showModal.id}`}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
               />
             )}
-            {modalFocus?.type === "reward" && (
+            {showModal?.type === "reward" && (
               <BridgedIframe
-                src={`${host}/reward/?id=${modalFocus.id}`}
+                src={`${host}/reward/?id=${showModal.id}`}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={async (feature, focus) => {
                   if (feature === "discover") {
-                    setModalFocus(undefined);
-                    setShowModal(false);
+                    setShowModal(undefined);
                   } else if (feature === "engaged" && focus) {
-                    setModalFocus({ id: focus, type: "card" });
-                    setShowModal(true);
+                    setShowModal({ id: focus, type: "card" });
                   }
                   return undefined;
                 }}
