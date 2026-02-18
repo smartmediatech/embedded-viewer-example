@@ -175,17 +175,17 @@ export const BridgedIframe = forwardRef<
 
     // Cleanup
     return () => {
-      if (bridgeRef.current) {
-        bridgeRef.current.removeRequestHandler("session.get");
-        bridgeRef.current.removeRequestHandler("session.clear");
-        bridgeRef.current.removeRequestHandler("navigation.go");
-        bridgeRef.current.removeRequestHandler("navigation.open");
-        bridgeRef.current.removeRequestHandler("alert.notify");
-        bridgeRef.current.removeRequestHandler("alert.notifyDetail");
-        bridgeRef.current.removeRequestHandler("alert.confirm");
-        bridgeRef.current.removeRequestHandler("alert.inform");
-        bridgeRef.current.removeRequestHandler("loader.show");
-        bridgeRef.current.removeRequestHandler("loader.hide");
+      if (bridge) {
+        bridge.removeRequestHandler("session.get");
+        bridge.removeRequestHandler("session.clear");
+        bridge.removeRequestHandler("navigation.go");
+        bridge.removeRequestHandler("navigation.open");
+        bridge.removeRequestHandler("alert.notify");
+        bridge.removeRequestHandler("alert.notifyDetail");
+        bridge.removeRequestHandler("alert.confirm");
+        bridge.removeRequestHandler("alert.inform");
+        bridge.removeRequestHandler("loader.show");
+        bridge.removeRequestHandler("loader.hide");
       }
       // Close any open SweetAlert modals on cleanup
       Swal.close();
