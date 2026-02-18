@@ -4,6 +4,7 @@ import {
   useState,
   useImperativeHandle,
   forwardRef,
+  useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "../services/authService";
@@ -42,13 +43,18 @@ export const BridgedIframe = forwardRef<
   BridgedIframeHandle,
   BridgedIframeProps
 >(({ src, className, onNavigation }, ref) => {
-  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [iframe, setIframe] = useState<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<ParentBridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const navigate = useNavigate();
 
+  const setIframeRef = useCallback(
+    (element: HTMLIFrameElement | null) => {
+      setIframe(element);
+    },
+    [setIframe],
+  );
   useEffect(() => {
-    const iframe = iframeRef.current;
     if (!iframe) {
       console.error("Iframe not available");
       return;
@@ -148,7 +154,7 @@ export const BridgedIframe = forwardRef<
     // Register loader handlers
     bridge.addRequestHandler("loader.show", async ({ payload }) => {
       const { label } = payload as { label: string };
-      
+
       Swal.fire({
         title: label || "Loading...",
         allowOutsideClick: false,
@@ -159,7 +165,7 @@ export const BridgedIframe = forwardRef<
           Swal.showLoading();
         },
       });
-      
+
       return {};
     });
 
@@ -175,22 +181,26 @@ export const BridgedIframe = forwardRef<
 
     // Cleanup
     return () => {
-      if (bridgeRef.current) {
-        bridgeRef.current.removeRequestHandler("session.get");
-        bridgeRef.current.removeRequestHandler("session.clear");
-        bridgeRef.current.removeRequestHandler("navigation.go");
-        bridgeRef.current.removeRequestHandler("navigation.open");
-        bridgeRef.current.removeRequestHandler("alert.notify");
-        bridgeRef.current.removeRequestHandler("alert.notifyDetail");
-        bridgeRef.current.removeRequestHandler("alert.confirm");
-        bridgeRef.current.removeRequestHandler("alert.inform");
-        bridgeRef.current.removeRequestHandler("loader.show");
-        bridgeRef.current.removeRequestHandler("loader.hide");
+      if (bridge) {
+        bridge.removeRequestHandler("session.get");
+        bridge.removeRequestHandler("session.clear");
+        bridge.removeRequestHandler("navigation.go");
+        bridge.removeRequestHandler("navigation.open");
+        bridge.removeRequestHandler("alert.notify");
+        bridge.removeRequestHandler("alert.notifyDetail");
+        bridge.removeRequestHandler("alert.confirm");
+        bridge.removeRequestHandler("alert.inform");
+        bridge.removeRequestHandler("loader.show");
+        bridge.removeRequestHandler("loader.hide");
+        bridge.dispose();
+        if (bridgeRef.current === bridge) {
+          bridgeRef.current = null;
+        }
       }
       // Close any open SweetAlert modals on cleanup
       Swal.close();
     };
-  }, [src, navigate]);
+  }, [src, navigate, iframe, onNavigation]);
 
   // Expose goTo function via ref
   useImperativeHandle(ref, () => ({
@@ -209,7 +219,7 @@ export const BridgedIframe = forwardRef<
 
   return (
     <iframe
-      ref={iframeRef}
+      ref={setIframeRef}
       src={iframeSrc || undefined}
       className={className}
       title="Embedded Content"
