@@ -6,7 +6,7 @@ import {
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
 
-const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components";
+const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
 
 export const Discover = () => {
   const [loading, setLoading] = useState(false);
