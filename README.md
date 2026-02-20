@@ -26,6 +26,27 @@ This library provides the `SMTBaseBridge.ParentBridge` class used to establish c
 
 ## Configuration
 
+### Content Security Policy (CSP)
+
+To embed the FIFA viewer and its components, your parent application must configure the Content Security Policy to allow frames from the required domain. Add the following `frame-src` directive to your CSP:
+
+```
+frame-src https://embedded.smartmedialabs.io
+```
+
+**Example CSP Header:**
+
+```
+Content-Security-Policy: frame-src 'self' https://embedded.smartmedialabs.io;
+```
+
+**Example Meta Tag (for development):**
+
+```html
+<meta http-equiv="Content-Security-Policy" 
+      content="frame-src 'self' https://embedded.smartmedialabs.io;">
+```
+
 ### App ID and Embedded Viewer URL
 
 Configure the App ID and Embedded Viewer URL in `src/services/authService.ts`:
@@ -248,11 +269,13 @@ The FIFA embedded viewer provides several **isolated components** that can be em
 3. **Card Component** (`/components/card/?id={cardId}`)
    - Displays detailed card information
    - Requires card ID as query parameter
+   - **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
    - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123`
 
 4. **Reward Component** (`/components/reward/?id={rewardId}`)
    - Shows reward details and redemption options
    - Requires reward ID as query parameter
+   - **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
    - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
 
 #### Using Isolated Components
@@ -483,8 +506,8 @@ yarn build
 ### Isolated Components
 - **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/`
 - **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/`
-- **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id={cardId}`
-- **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id={rewardId}`
+- **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
+- **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
 
 ## Technologies Used
 
