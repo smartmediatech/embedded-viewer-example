@@ -59,6 +59,30 @@ export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandb
 
 **⚠️ IMPORTANT**: The `APP_ID` configured here **must match** the App ID that the embedded viewer is configured to use. Mismatched App IDs will cause authentication and communication failures.
 
+### Environment-Specific URLs
+
+The embedded viewer is available in different environments:
+
+#### Development Environment
+- **For local development**: Use `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev`
+- Use this URL when developing and testing locally
+- **Important**: The container app must not have a referrer policy that blocks the child iframe from accessing the referrer. Ensure your referrer policy allows the embedded viewer to receive referrer information for proper authentication and functionality.
+
+#### Staging Environment  
+- **For production**: Use `https://embedded.smartmedialabs.io/fifasandbox.beta/components`
+- **Target site**: `https://dev-www.fifa.com/`
+- Use this URL for staging deployments
+
+**Example configuration for local development:**
+
+```typescript
+// For local development
+export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
+
+// For staging
+// export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandbox.beta/components";
+```
+
 ## Key Features
 
 ### 1. Login Flow
@@ -257,12 +281,12 @@ The FIFA embedded viewer provides several **isolated components** that can be em
 #### Available Components
 
 1. **Challenges Component** (`/components/challenges/`)
-   - Displays user challenges and progress
+   - Displays challenges that the user has started and their progress
    - Supports navigation to engaged cards via modal
    - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/`
 
 2. **Discover Component** (`/components/discover/`)
-   - Shows discoverable content and rewards
+   - Shows challenges available to start, rewards available to claim, as well as challenges the user has started and rewards they have acquired
    - Supports navigation to card and reward details
    - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/`
 
@@ -504,6 +528,14 @@ yarn build
 - **Features**: `#/discover`, `#/map`, `#/inventory`, etc.
 
 ### Isolated Components
+
+#### Development Environment (for local development)
+- **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/challenges/`
+- **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/discover/`
+- **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/card/?id={cardId}`
+- **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/reward/?id={rewardId}`
+
+#### Production Environment
 - **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/`
 - **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/`
 - **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**

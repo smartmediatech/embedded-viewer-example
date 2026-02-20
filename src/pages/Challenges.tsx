@@ -6,6 +6,8 @@ import {
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
 
+const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
+
 export const Challenges = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -99,7 +101,7 @@ export const Challenges = () => {
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
           <BridgedIframe
             ref={iframeRef}
-            src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/"
+            src={`${host}/challenges/`}
             className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
             onNavigation={async (feature, focus) => {
               console.log("on navigation", feature, focus);
@@ -138,7 +140,7 @@ export const Challenges = () => {
 
             {/* BridgedIframe in modal */}
             <BridgedIframe
-              src={`https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=${modalFocus}`}
+              src={`${host}/card/?id=${modalFocus}`}
               className="w-full h-full rounded-lg shadow-2xl border-0"
             />
           </div>
