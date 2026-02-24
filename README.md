@@ -1,21 +1,57 @@
-# FIFA - Container App Example
+# FIFA - Embedded Components Example
 
-This project demonstrates a **container application** that embeds and communicates with the **FIFA Embedded Viewer** using the `smt-base-bridge` library. The container app handles authentication, passes auth tokens to the embedded viewer, manages navigation between features/pages, and handles logout functionality.
+This project demonstrates a **container application** that embeds **FIFA Embedded Components** using the `smt-base-bridge` library. The container app handles authentication, passes auth tokens to embedded components, manages navigation, and provides a seamless integration experience.
 
 ## Overview
 
 This example showcases:
 - **User Authentication**: Login flow with email/password
-- **Auth Token Passing**: Securely passing refresh tokens to the embedded viewer
-- **Feature Navigation**: Changing pages/features within the embedded viewer (e.g., Discover, Inventory, Map)
-- **Isolated Embeddable Components**: Standalone components that can be embedded independently (Challenges, Discover, Card, Reward)
-- **Logout Handling**: Coordinated logout between container and embedded viewer
-- **Bridge Communication**: Two-way communication using the `smt-base-bridge` library
+- **Auth Token Passing**: Securely passing refresh tokens to embedded components
+- **Isolated Embeddable Components**: Standalone components that can be embedded independently (Discover, Challenges, Card, Reward)
 - **Modal Navigation**: Opening detailed views in modals with navigation handling
+- **Bridge Communication**: Two-way communication using the `smt-base-bridge` library
+- **Logout Handling**: Coordinated logout between container and embedded components
+
+## Key Embedded Components
+
+### 1. **Discover Component** (Primary/Default)
+The Discover component is the main landing page and shows:
+- Challenges available to start
+- Rewards available to claim
+- Challenges the user has started
+- Rewards they have acquired
+
+Supports navigation to card and reward details via modals.
+
+**Example**: `src/pages/Discover.tsx`
+
+### 2. **Challenges Component**
+Displays challenges that the user has started and their progress. Supports navigation to engaged cards via modal.
+
+**Example**: `src/pages/Challenges.tsx`
+
+### 3. **Card Component**
+Displays detailed card information. Requires card ID as query parameter.
+
+**⚠️ IMPORTANT**: Must include trailing `/` before query parameters
+
+**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123`
+
+### 4. **Reward Component**
+Shows reward details and redemption options. Requires reward ID as query parameter.
+
+**⚠️ IMPORTANT**: Must include trailing `/` before query parameters
+
+**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
+
+### 5. **Full Embedded Viewer** (Legacy)
+The full embedded viewer under `/main` provides the complete FIFA experience with all features (Discover, Map, Inventory, etc.). This is considered **legacy** and the isolated components above are the recommended approach for new integrations.
+
+**Example**: `src/pages/Main.tsx`
 
 ## Prerequisites
 
-The **`smt-base-bridge.min.js`** library from the `public/` directory must be loaded in your HTML to enable communication between the container app and the embedded viewer.
+The **`smt-base-bridge.min.js`** library from the `public/` directory must be loaded in your HTML to enable communication between the container app and the embedded components.
 
 ```html
 <!-- public/index.html -->
@@ -28,60 +64,76 @@ This library provides the `SMTBaseBridge.ParentBridge` class used to establish c
 
 ### Content Security Policy (CSP)
 
-To embed the FIFA viewer and its components, your parent application must configure the Content Security Policy to allow frames from the required domain. Add the following `frame-src` directive to your CSP:
+To embed the FIFA components, your parent application must configure the Content Security Policy to allow frames from the required domains. Add the following `frame-src` directive to your CSP:
 
 ```
-frame-src https://embedded.smartmedialabs.io
+frame-src https://embedded.smartmedialabs.io https://embedded.smtwallet.app
 ```
 
 **Example CSP Header:**
 
 ```
-Content-Security-Policy: frame-src 'self' https://embedded.smartmedialabs.io;
+Content-Security-Policy: frame-src 'self' https://embedded.smartmedialabs.io https://embedded.smtwallet.app;
 ```
 
 **Example Meta Tag (for development):**
 
 ```html
 <meta http-equiv="Content-Security-Policy" 
-      content="frame-src 'self' https://embedded.smartmedialabs.io;">
+      content="frame-src 'self' https://embedded.smartmedialabs.io https://embedded.smtwallet.app;">
 ```
 
-### App ID and Embedded Viewer URL
+**Note:** 
+- `https://embedded.smartmedialabs.io` is used for local development
+- `https://embedded.smtwallet.app` is used for sandbox, test, and live environments
 
-Configure the App ID and Embedded Viewer URL in `src/services/authService.ts`:
+### Environment Configurations
+
+The FIFA embedded components are available in multiple environments. Configure the appropriate App ID and URLs based on your target environment in `src/services/authService.ts`:
 
 ```typescript
-export const API_BASE_URL = "https://b.smartmedialabs.io";
-export const APP_ID = "46fcb627-b237-4706-8175-299801d97cb5";
-export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandbox.beta/";
+const environmentConfigs = {
+  sandbox: {
+    origin: "https://dev-www.fifa.com",
+    fqdn: "smt.fifasandbox",
+    appId: "46fcb627-b237-4706-8175-299801d97cb5",
+  },
+  test: {
+    origin: "https://ppr-www.fifa.com",
+    fqdn: "smt.fifatest",
+    appId: "4290980e-0b00-42fb-8b3e-c469af9823df",
+  },
+  live: {
+    origin: "https://www.fifa.com",
+    fqdn: "smt.fifa",
+    appId: "be435e80-9b2e-4526-aa0c-070b2673aa64",
+  },
+};
 ```
 
-**⚠️ IMPORTANT**: The `APP_ID` configured here **must match** the App ID that the embedded viewer is configured to use. Mismatched App IDs will cause authentication and communication failures.
+**⚠️ IMPORTANT**: The `appId` configured here **must match** the App ID that the embedded components are configured to use. Mismatched App IDs will cause authentication and communication failures.
 
 ### Environment-Specific URLs
 
-The embedded viewer is available in different environments:
-
-#### Development Environment
-- **For local development**: Use `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev`
+#### Local Development
+- **For local development**: Use `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/`
 - Use this URL when developing and testing locally
-- **Important**: The container app must not have a referrer policy that blocks the child iframe from accessing the referrer. Ensure your referrer policy allows the embedded viewer to receive referrer information for proper authentication and functionality.
+- **Important**: The container app must not have a referrer policy that blocks the child iframe from accessing the referrer. Ensure your referrer policy allows the embedded components to receive referrer information for proper authentication and functionality.
 
-#### Staging Environment  
-- **For production**: Use `https://embedded.smartmedialabs.io/fifasandbox.beta/components`
-- **Target site**: `https://dev-www.fifa.com/`
-- Use this URL for staging deployments
+#### Sandbox Environment
+- **Base URL**: `https://embedded.smtwallet.app/fifa/sandbox/components/`
+- **Target site**: `https://dev-www.fifa.com`
+- **App ID**: `46fcb627-b237-4706-8175-299801d97cb5`
 
-**Example configuration for local development:**
+#### Test Environment
+- **Base URL**: `https://embedded.smtwallet.app/fifa/test/components/`
+- **Target site**: `https://ppr-www.fifa.com`
+- **App ID**: `4290980e-0b00-42fb-8b3e-c469af9823df`
 
-```typescript
-// For local development
-export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
-
-// For staging
-// export const EMBEDDED_VIEWER_URL = "https://embedded.smartmedialabs.io/fifasandbox.beta/components";
-```
+#### Live Environment
+- **Base URL**: `https://embedded.smtwallet.app/fifa/live/components/`
+- **Target site**: `https://www.fifa.com`
+- **App ID**: `be435e80-9b2e-4526-aa0c-070b2673aa64`
 
 ## Key Features
 
@@ -144,9 +196,9 @@ async login(credentials: LoginCredentials): Promise<AuthResponse> {
 }
 ```
 
-### 2. Passing Auth to the Embedded Viewer
+### 2. Passing Auth to Embedded Components
 
-The `BridgedIframe` component (`src/components/BridgedIframe.tsx`) establishes communication with the embedded viewer and handles authentication requests:
+The `BridgedIframe` component (`src/components/BridgedIframe.tsx`) establishes communication with embedded components and handles authentication requests:
 
 ```typescript
 useEffect(() => {
@@ -165,14 +217,14 @@ useEffect(() => {
   });
   bridgeRef.current = bridge;
 
-  // Register session.get handler - provides refresh token to embedded viewer
+  // Register session.get handler - provides refresh token to embedded components
   bridge.addRequestHandler("session.get", async () => {
     const refreshToken = authService.getRefreshToken();
     console.log("session.get called, returning refreshToken");
     return { refreshToken };
   });
 
-  // Register session.clear handler - handles logout from embedded viewer
+  // Register session.clear handler - handles logout from embedded components
   bridge.addRequestHandler("session.clear", async () => {
     console.log("session.clear called");
     await authService.logout();
@@ -193,116 +245,31 @@ useEffect(() => {
 }, [src, navigate]);
 ```
 
-When the embedded viewer needs authentication, it calls `session.get` through the bridge, and the container responds with the refresh token.
+When an embedded component needs authentication, it calls `session.get` through the bridge, and the container responds with the refresh token.
 
-### 3. Changing Features/Pages
+### 3. Using Isolated Components
 
-The container app can navigate the embedded viewer to different features using the bridge's `sendRequest` method:
-
-**Main Page Navigation** (`src/pages/Main.tsx`):
+**Example: Discover Page** (`src/pages/Discover.tsx`):
 
 ```typescript
-const handleGoToDiscover = async () => {
-  try {
-    await iframeRef.current?.goTo({ feature: "discover" });
-  } catch (error) {
-    console.error("Navigation to discover failed:", error);
-  }
-};
-
-const handleGoToMap = async () => {
-  try {
-    await iframeRef.current?.goTo({ feature: "map" });
-  } catch (error) {
-    console.error("Navigation to map failed:", error);
-  }
-};
-
-const handleGoToInventory = async () => {
-  try {
-    await iframeRef.current?.goTo({ feature: "inventory" });
-  } catch (error) {
-    console.error("Navigation to inventory failed:", error);
-  }
-};
-```
-
-**BridgedIframe Component** (`src/components/BridgedIframe.tsx`):
-
-```typescript
-// Expose goTo function via ref
-useImperativeHandle(ref, () => ({
-  goTo: async (params: {
-    feature: string;
-    focus?: string;
-    extra?: string;
-    params?: Record<string, any>;
-  }) => {
-    if (!bridgeRef.current) {
-      throw new Error("Bridge not initialized");
+<BridgedIframe
+  ref={iframeRef}
+  src={`${host}/discover/?lang=${appLanguage}`}
+  className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
+  onNavigation={async (feature, focus) => {
+    if (feature === "engaged" && focus) {
+      // Open card in modal
+      setModalFocus({ id: focus, type: "card" });
+      setShowModal(true);
+    } else if (feature === "reward" && focus) {
+      // Open reward in modal
+      setModalFocus({ id: focus, type: "reward" });
+      setShowModal(true);
     }
-    return bridgeRef.current.sendRequest("navigation.go", params);
-  },
-}));
+    return undefined;
+  }}
+/>
 ```
-
-The embedded viewer can also request navigation changes, which the container can approve or reject:
-
-```typescript
-bridge.addRequestHandler("navigation.go", async ({ payload }) => {
-  const { feature, focus, extra, params } = payload as {
-    feature: string;
-    focus: string;
-    extra: string;
-    params: Record<string, any>;
-  };
-
-  // Reject certain features
-  if (
-    feature === "ar" ||
-    feature === "ar-face-filter" ||
-    feature === "ar-wearable" ||
-    feature === "ar-engaged" ||
-    feature === "eight-wall"
-  ) {
-    alert("Request to goto " + feature + " rejected");
-    return {};
-  }
-  
-  // Approve supported routes
-  return { feature, focus, extra, params };
-});
-```
-
-### 4. Isolated Embeddable Components
-
-The FIFA embedded viewer provides several **isolated components** that can be embedded independently without the full viewer experience. These components are perfect for integrating specific functionality into your container app:
-
-#### Available Components
-
-1. **Challenges Component** (`/components/challenges/`)
-   - Displays challenges that the user has started and their progress
-   - Supports navigation to engaged cards via modal
-   - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/`
-
-2. **Discover Component** (`/components/discover/`)
-   - Shows challenges available to start, rewards available to claim, as well as challenges the user has started and rewards they have acquired
-   - Supports navigation to card and reward details
-   - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/`
-
-3. **Card Component** (`/components/card/?id={cardId}`)
-   - Displays detailed card information
-   - Requires card ID as query parameter
-   - **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
-   - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123`
-
-4. **Reward Component** (`/components/reward/?id={rewardId}`)
-   - Shows reward details and redemption options
-   - Requires reward ID as query parameter
-   - **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
-   - Example: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
-
-#### Using Isolated Components
 
 **Example: Challenges Page** (`src/pages/Challenges.tsx`):
 
@@ -322,35 +289,7 @@ The FIFA embedded viewer provides several **isolated components** that can be em
 />
 ```
 
-**Example: Discover Page with Modal Navigation** (`src/pages/Discover.tsx`):
-
-```typescript
-<BridgedIframe
-  ref={iframeRef}
-  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/"
-  className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
-  onNavigation={async (feature, focus) => {
-    if (feature === "engaged" && focus) {
-      setModalFocus({ id: focus, type: "card" });
-      setShowModal(true);
-    } else if (feature === "reward" && focus) {
-      setModalFocus({ id: focus, type: "reward" });
-      setShowModal(true);
-    }
-    return undefined;
-  }}
-/>
-
-{/* Modal with Card or Reward component */}
-{showModal && modalFocus?.type === "card" && (
-  <BridgedIframe
-    src={`https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=${modalFocus.id}`}
-    className="w-full h-full rounded-lg shadow-2xl border-0"
-  />
-)}
-```
-
-### 5. Navigation Handling with onNavigation
+### 4. Navigation Handling with onNavigation
 
 The `BridgedIframe` component supports an optional `onNavigation` callback that allows you to intercept and handle navigation requests from the embedded component:
 
@@ -379,7 +318,7 @@ interface BridgedIframeProps {
 - **Return navigation object**: Approves and potentially modifies the navigation
 - **Throw error**: Rejects the navigation request
 
-### 6. Loader and Alert Handlers
+### 5. Loader and Alert Handlers
 
 The `BridgedIframe` component handles loader and alert requests from embedded components:
 
@@ -417,11 +356,11 @@ bridge.addRequestHandler("alert.notify", async () => {
 });
 ```
 
-### 7. Logout
+### 6. Logout
 
-Logout can be initiated from either the container or the embedded viewer:
+Logout can be initiated from either the container or the embedded components:
 
-**Container-Initiated Logout** (`src/pages/Main.tsx`):
+**Container-Initiated Logout** (`src/pages/Discover.tsx`):
 
 ```typescript
 const handleLogout = async () => {
@@ -437,7 +376,7 @@ const handleLogout = async () => {
 };
 ```
 
-**Embedded Viewer-Initiated Logout** (handled in `BridgedIframe.tsx`):
+**Embedded Component-Initiated Logout** (handled in `BridgedIframe.tsx`):
 
 ```typescript
 // Register session.clear handler
@@ -475,9 +414,9 @@ fifa-embedded-example/
 │   │   └── AuthContext.tsx           # Authentication context provider
 │   ├── pages/
 │   │   ├── Login.tsx                 # Login page
-│   │   ├── Main.tsx                  # Main page with full embedded viewer
-│   │   ├── Challenges.tsx            # Challenges component page with modal
-│   │   └── Discover.tsx              # Discover component page with modals
+│   │   ├── Discover.tsx              # Discover component page (DEFAULT)
+│   │   ├── Challenges.tsx            # Challenges component page
+│   │   └── Main.tsx                  # Full embedded viewer (LEGACY)
 │   ├── services/
 │   │   └── authService.ts            # Authentication service (CONFIG HERE)
 │   ├── types/                        # TypeScript type definitions
@@ -501,7 +440,7 @@ yarn install
 yarn dev
 ```
 
-The app will be available at `http://localhost:3000`
+The app will be available at `http://localhost:3000` and will land on the **Discover** page by default.
 
 ### Production Build
 
@@ -511,35 +450,49 @@ yarn build
 
 ## Bridge Communication Flow
 
-1. **Container loads** the embedded viewer or component in an iframe
+1. **Container loads** the embedded component in an iframe
 2. **Bridge initialization**: `ParentBridge` is created with the iframe reference and origin
 3. **Request handlers registered**: Container registers handlers for `session.get`, `session.clear`, `navigation.go`, `loader.show`, `loader.hide`, etc.
-4. **Embedded viewer requests auth**: Calls `session.get` through the bridge
+4. **Embedded component requests auth**: Calls `session.get` through the bridge
 5. **Container responds**: Returns the refresh token
-6. **Embedded viewer authenticates**: Uses the refresh token to obtain access tokens
+6. **Embedded component authenticates**: Uses the refresh token to obtain access tokens
 7. **Navigation requests**: Either side can request navigation changes through the bridge
 8. **Modal handling**: Container can intercept navigation to open modals with isolated components
 9. **Logout coordination**: Either side can initiate logout, which is handled by both
 
 ## Embedded Component URLs
 
-### Full Viewer
-- **Base URL**: `https://embedded.smartmedialabs.io/fifasandbox.beta/`
-- **Features**: `#/discover`, `#/map`, `#/inventory`, etc.
+### Isolated Components (Recommended)
 
-### Isolated Components
-
-#### Development Environment (for local development)
-- **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/challenges/`
+#### Local Development (for local development only)
 - **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/discover/`
+- **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/challenges/`
 - **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/card/?id={cardId}`
 - **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/reward/?id={rewardId}`
 
-#### Production Environment
-- **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/`
-- **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/`
-- **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
-- **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+#### Sandbox Environment
+- **Discover**: `https://embedded.smtwallet.app/fifa/sandbox/components/discover/`
+- **Challenges**: `https://embedded.smtwallet.app/fifa/sandbox/components/challenges/`
+- **Card**: `https://embedded.smtwallet.app/fifa/sandbox/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
+- **Reward**: `https://embedded.smtwallet.app/fifa/sandbox/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+
+#### Test Environment
+- **Discover**: `https://embedded.smtwallet.app/fifa/test/components/discover/`
+- **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/challenges/`
+- **Card**: `https://embedded.smtwallet.app/fifa/test/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
+- **Reward**: `https://embedded.smtwallet.app/fifa/test/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+
+#### Live Environment
+- **Discover**: `https://embedded.smtwallet.app/fifa/live/components/discover/`
+- **Challenges**: `https://embedded.smtwallet.app/fifa/live/components/challenges/`
+- **Card**: `https://embedded.smtwallet.app/fifa/live/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
+- **Reward**: `https://embedded.smtwallet.app/fifa/live/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+
+### Full Embedded Viewer (Legacy)
+
+The full embedded viewer is available at `/main` but is considered **legacy**. For new integrations, use the isolated components above.
+
+**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/#/discover`
 
 ## Technologies Used
 

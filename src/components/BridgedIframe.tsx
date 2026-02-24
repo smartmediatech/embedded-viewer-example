@@ -50,9 +50,11 @@ export const BridgedIframe = forwardRef<
 
   const setIframeRef = useCallback(
     (element: HTMLIFrameElement | null) => {
-      setIframe(element);
+      if (element !== iframe) {
+        setIframe(element);
+      }
     },
-    [setIframe],
+    [iframe],
   );
   useEffect(() => {
     if (!iframe) {

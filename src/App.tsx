@@ -16,7 +16,15 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Main />
+                <Discover />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/discover"
+            element={
+              <ProtectedRoute>
+                <Discover />
               </ProtectedRoute>
             }
           />
@@ -29,10 +37,10 @@ function App() {
             }
           />
           <Route
-            path="/discover"
+            path="/main"
             element={
               <ProtectedRoute>
-                <Discover />
+                <Main />
               </ProtectedRoute>
             }
           />
