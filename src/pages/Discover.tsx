@@ -131,8 +131,9 @@ export const Discover = () => {
           <BridgedIframe
             ref={iframeRef}
             src={`${host}/discover/?lang=${appLanguage}`}
-            className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
+            className="w-full h-full rounded-lg shadow-lg border-0 grow"
             onNavigation={onNavigation}
+            sizeToContent
           />
         </div>
       </main>

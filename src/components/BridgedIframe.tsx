@@ -15,6 +15,7 @@ interface BridgedIframeProps {
   src: string;
   className?: string;
   useRefreshToken?: boolean;
+  sizeToContent?: boolean;
   onNavigation?: (
     feature: string,
     focus?: string,
@@ -43,7 +44,7 @@ export interface BridgedIframeHandle {
 export const BridgedIframe = forwardRef<
   BridgedIframeHandle,
   BridgedIframeProps
->(({ src, className, onNavigation, useRefreshToken }, ref) => {
+>(({ src, className, onNavigation, useRefreshToken, sizeToContent }, ref) => {
   const [iframe, setIframe] = useState<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<ParentBridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
@@ -188,6 +189,32 @@ export const BridgedIframe = forwardRef<
       return {};
     });
 
+    // Register frame.resize handler
+    bridge.addRequestHandler("frame.resize", async ({ payload }) => {
+      if (!sizeToContent) {
+        return new BridgeError(
+          "NOT_SUPPORTED",
+          "frame.resize is not supported when sizeToContent is disabled",
+        );
+      }
+
+      const { height } = payload as { height: number };
+      
+      if (typeof height !== "number" || height < 0) {
+        return new BridgeError(
+          "INVALID_PARAMETER",
+          "height must be a positive number",
+        );
+      }
+
+      if (iframe) {
+        iframe.style.height = `${height}px`;
+        console.log(`Iframe height resized to ${height}px`);
+      }
+
+      return {};
+    });
+
     console.log("Bridge handlers registered successfully");
 
     // Now that bridge is configured, set the iframe src
@@ -206,6 +233,7 @@ export const BridgedIframe = forwardRef<
         bridge.removeRequestHandler("alert.inform");
         bridge.removeRequestHandler("loader.show");
         bridge.removeRequestHandler("loader.hide");
+        bridge.removeRequestHandler("frame.resize");
         bridge.dispose();
         if (bridgeRef.current === bridge) {
           bridgeRef.current = null;
@@ -214,7 +242,7 @@ export const BridgedIframe = forwardRef<
       // Close any open SweetAlert modals on cleanup
       Swal.close();
     };
-  }, [src, navigate, iframe, onNavigation]);
+  }, [src, navigate, iframe, onNavigation, sizeToContent]);
 
   // Expose goTo function via ref
   useImperativeHandle(ref, () => ({
