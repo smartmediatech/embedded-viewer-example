@@ -44,6 +44,91 @@ Shows reward details and redemption options. Requires reward ID as query paramet
 
 **Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
 
+## Language Configuration
+
+### Setting the Language
+
+All embedded components support language configuration via the `lang` query parameter in the component URL. 
+
+**⚠️ IMPORTANT**: When setting query parameters (including `lang`), the trailing `/` must be present before the `?` character.
+
+**Correct Format**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/?lang=es`
+
+**Incorrect Format**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover?lang=es` ❌ (missing `/` before `?`)
+
+### Language Detection Behavior
+
+The embedded components use the following language detection priority:
+
+1. **Explicit `lang` parameter**: If a `lang` query parameter is provided in the URL, that language will be used
+2. **Browser language**: If no `lang` parameter is set, the component will attempt to use the browser's language setting
+3. **Fallback**: If neither is available or supported, the component defaults to English (`en`)
+
+### Supported Language Format
+
+Language codes must use an **ISO 639-1 language code** with an optional **ISO 3166-1 alpha-2 regional code**, separated by a hyphen (for example, `en` or `en-US`).
+
+**Examples**:
+- `en` - English (generic)
+- `en-US` - English (United States)
+- `en-GB` - English (United Kingdom)
+- `es` - Spanish (generic)
+- `es-ES` - Spanish (Spain)
+- `es-MX` - Spanish (Mexico)
+- `fr` - French (generic)
+- `fr-FR` - French (France)
+- `de` - German
+
+### Supported Languages
+
+The specific languages supported depend on the FIFA configuration. Contact **SMT (Smart Media Technologies)** for:
+- Complete list of supported languages
+- Regional variant availability
+- Language configuration updates
+
+### Usage Examples
+
+**Discover component with Spanish**:
+```typescript
+<BridgedIframe
+  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/?lang=es"
+  className="w-full h-full"
+/>
+```
+
+**Challenges component with French**:
+```typescript
+<BridgedIframe
+  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/?lang=fr"
+  className="w-full h-full"
+/>
+```
+
+**Card component with language and ID parameters**:
+```typescript
+<BridgedIframe
+  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123&lang=de"
+  className="w-full h-full"
+/>
+```
+
+**Dynamic language from state**:
+```typescript
+const [language, setLanguage] = useState('en');
+
+<BridgedIframe
+  src={`https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/?lang=${language}`}
+  className="w-full h-full"
+/>
+```
+
+### Important Notes
+
+- Always include the trailing `/` before query parameters to ensure proper routing
+- Language codes are case-insensitive but lowercase is recommended
+- Invalid or unsupported language codes will fall back to the browser language or English
+- The `lang` parameter can be combined with other query parameters (e.g., `?id=123&lang=es`)
+
 ### 5. **Full Embedded Viewer** (Legacy)
 The full embedded viewer under `/main` provides the complete FIFA experience with all features (Discover, Map, Inventory, etc.). This is considered **legacy** and the isolated components above are the recommended approach for new integrations.
 
