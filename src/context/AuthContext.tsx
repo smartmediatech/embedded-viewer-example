@@ -34,12 +34,26 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    // Check if user is already logged in
-    const currentUser = authService.getCurrentUser();
-    if (currentUser) {
-      setUser(currentUser);
+    // Check if user is already logged in and fetch from API
+    const fetchUser = async () => {
+      try {
+        const currentUser = await authService.fetchCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        // If fetch fails, logout the user
+        console.error("Failed to fetch current user, logging out:", error);
+        authService.clearSession();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (authService.isAuthenticated()) {
+      fetchUser();
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   const login = async (credentials: LoginCredentials) => {

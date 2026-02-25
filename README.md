@@ -47,6 +47,8 @@ Shows reward details and redemption options. Requires reward ID as query paramet
 ### 5. **Full Embedded Viewer** (Legacy)
 The full embedded viewer under `/main` provides the complete FIFA experience with all features (Discover, Map, Inventory, etc.). This is considered **legacy** and the isolated components above are the recommended approach for new integrations.
 
+**⚠️ IMPORTANT**: The legacy embedded viewer **only supports `refreshToken` access**. When using the full embedded viewer, you must configure the `session.get` handler to return a refresh token, not an access token.
+
 **Example**: `src/pages/Main.tsx`
 
 ## Prerequisites
@@ -198,7 +200,88 @@ async login(credentials: LoginCredentials): Promise<AuthResponse> {
 
 ### 2. Passing Auth to Embedded Components
 
-The `BridgedIframe` component (`src/components/BridgedIframe.tsx`) establishes communication with embedded components and handles authentication requests:
+The `BridgedIframe` component (`src/components/BridgedIframe.tsx`) establishes communication with embedded components and handles authentication requests.
+
+#### Supported Token Types
+
+The `session.get` handler supports returning **either an access token or a refresh token**:
+
+**Option 1: Return Access Token** (Recommended for isolated components)
+
+```typescript
+bridge.addRequestHandler("session.get", async () => {
+  const accessToken = await authService.getAccessToken();
+  console.log("session.get called, returning accessToken");
+  return { accessToken };
+});
+```
+
+When returning an access token, the container application manages the token refresh lifecycle. The embedded component receives a valid, ready-to-use access token.
+
+**Option 2: Return Refresh Token** (Required for legacy embedded viewer)
+
+```typescript
+bridge.addRequestHandler("session.get", async () => {
+  const refreshToken = authService.getRefreshToken();
+  console.log("session.get called, returning refreshToken");
+  return { refreshToken };
+});
+```
+
+When returning a refresh token, the embedded component is responsible for managing the token refresh lifecycle and obtaining access tokens as needed.
+
+**⚠️ IMPORTANT**: The **legacy full embedded viewer** (`/main`) **only supports `refreshToken` access**. If you are using the legacy viewer, you must use Option 2 and return a refresh token.
+
+#### Complete Bridge Setup Examples
+
+**Example 1: Using Access Token (Current Implementation)**
+
+```typescript
+useEffect(() => {
+  const iframe = iframeRef.current;
+  if (!iframe || !window.SMTBaseBridge) {
+    console.error("Iframe or SMTBaseBridge not available");
+    return;
+  }
+
+  const childOrigin = new URL(src);
+  
+  // Create bridge using ParentBridge constructor
+  const bridge = new window.SMTBaseBridge.ParentBridge(iframe, {
+    origin: childOrigin.origin,
+    meta: {},
+  });
+  bridgeRef.current = bridge;
+
+  // Register session.get handler - provides access token to embedded components
+  bridge.addRequestHandler("session.get", async () => {
+    const accessToken = await authService.getAccessToken();
+    console.log("session.get called, returning accessToken");
+    return { accessToken };
+  });
+
+  // Register session.clear handler - handles logout from embedded components
+  bridge.addRequestHandler("session.clear", async () => {
+    console.log("session.clear called");
+    await authService.logout();
+    navigate("/login");
+    return {};
+  });
+
+  // Set iframe src after bridge is configured
+  setIframeSrc(src);
+
+  return () => {
+    // Cleanup handlers
+    if (bridgeRef.current) {
+      bridgeRef.current.removeRequestHandler("session.get");
+      bridgeRef.current.removeRequestHandler("session.clear");
+    }
+  };
+}, [src, navigate]);
+```
+
+**Example 2: Using Refresh Token (Alternative)**
 
 ```typescript
 useEffect(() => {
@@ -245,7 +328,7 @@ useEffect(() => {
 }, [src, navigate]);
 ```
 
-When an embedded component needs authentication, it calls `session.get` through the bridge, and the container responds with the refresh token.
+When an embedded component needs authentication, it calls `session.get` through the bridge, and the container responds with either an access token or refresh token depending on your implementation choice.
 
 ### 3. Using Isolated Components
 
@@ -492,7 +575,276 @@ yarn build
 
 The full embedded viewer is available at `/main` but is considered **legacy**. For new integrations, use the isolated components above.
 
+**⚠️ IMPORTANT**: The legacy embedded viewer **only supports `refreshToken` access**. When using the full embedded viewer, you must configure the `session.get` handler to return a refresh token (see "Passing Auth to Embedded Components" section).
+
 **Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/#/discover`
+
+## Token Refresh & Access Token Lifecycle
+
+This application implements a robust token management system with automatic refresh token handling. The system uses two types of tokens:
+
+- **Access Token**: Short-lived token used for API requests (stored in memory)
+- **Refresh Token**: Long-lived token used to obtain new access tokens (stored in localStorage)
+
+### ⚠️ Security Considerations for Production
+
+**Important**: In this example, the refresh token is stored in `localStorage` for simplicity and demonstration purposes. However, **this is not recommended for production environments** due to XSS (Cross-Site Scripting) vulnerabilities.
+
+For production applications, consider these more secure alternatives:
+
+1. **Backend-Managed Refresh Tokens with HTTP-Only Cookies (Recommended)**:
+   - When the cross-domain API returns the refresh token to your frontend, immediately pass it to your host application's backend
+   - Store the refresh token server-side as an HTTP-only, Secure, SameSite cookie
+   - Your backend handles token refresh requests and returns new access tokens
+   - This prevents JavaScript access to the refresh token, protecting against XSS attacks
+   - The refresh token still originates from the cross-domain API but is securely managed by your backend
+
+2. **In-Memory Storage with Token Exchange**:
+   - Keep refresh tokens in memory only (lost on page reload)
+   - Implement a token exchange mechanism to obtain new refresh tokens when needed
+   - Requires additional authentication flow for session restoration after page reload
+   - Better than localStorage but requires users to re-authenticate more frequently
+
+3. **Frontend Database Storage** (e.g., IndexedDB):
+   - Store refresh tokens in a client-side database like IndexedDB instead of localStorage
+   - Provides slightly better security than localStorage (not accessible via simple XSS)
+   - Still vulnerable to sophisticated XSS attacks
+   - **Not ideal** - better than localStorage but significantly less secure than backend storage
+
+**For this example**: We use `localStorage` to demonstrate the token lifecycle in a simple, client-side-only implementation. When implementing in production with a cross-domain API, the recommended approach is to receive the refresh token from the API, then immediately pass it to your own backend for secure storage as an HTTP-only cookie.
+
+### Token Lifecycle Overview
+
+1. **Login**: User authenticates with email/password
+2. **Token Storage**: Access token stored in memory, refresh token in localStorage
+3. **API Requests**: Access token automatically validated and refreshed if needed
+4. **Token Expiration Check**: JWT expiration checked before each request
+5. **Automatic Refresh**: Expired access tokens automatically refreshed using refresh token
+6. **Session Validation**: Refresh token validated to ensure minimum remaining session time
+
+### Token Management in AuthService
+
+The `authService` (`src/services/authService/index.ts`) manages the complete token lifecycle:
+
+#### Login - Obtaining Tokens
+
+```typescript
+async login(credentials: LoginCredentials): Promise<AuthResponse> {
+  const payload: ApiLoginPayload = {
+    token: credentials.email,
+    token_type: "email",
+    auth_data: {
+      password: credentials.password,
+    },
+  };
+
+  const response = await fetch(`${API_BASE_URL}/v1/user/login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "App-Id": APP_ID,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data: ApiLoginResponse = await response.json();
+  const token = data.payload.access_token.token;
+  const refreshToken = data.payload.refresh_token.token;
+
+  // Store access token in memory, refresh token in localStorage
+  this.ACCESS_TOKEN = token;
+  localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+  localStorage.setItem(this.USER_KEY, JSON.stringify(user));
+
+  return { user, token, refreshToken };
+}
+```
+
+#### Session Validation - Checking Token Expiration
+
+The `isAuthenticated()` method validates the refresh token and ensures at least 5 minutes of remaining session time:
+
+```typescript
+isAuthenticated(): boolean {
+  const refresh = this.getRefreshToken();
+  // Make sure remaining user session is at least 5 min
+  const isValid = checkJwtToken(refresh, 5 * 60 * 1000);
+  return isValid;
+}
+```
+
+The `checkJwtExpiration.ts` utility decodes and validates JWT tokens:
+
+```typescript
+export default function checkJwtToken(
+  jwt: string | undefined | null,
+  minRemainingTime = 30000
+): boolean {
+  if (!jwt) return false;
+  try {
+    const decodedToken: Record<string, any> = jwtDecode(jwt);
+    const expirationTime: number = decodedToken.exp * 1000;
+    const nowDate = Date.now();
+
+    if (nowDate + minRemainingTime > expirationTime) {
+      return false;
+    }
+  } catch {
+    return false;
+  }
+  return true;
+}
+```
+
+#### Refreshing Access Tokens
+
+When an access token expires, the `refreshAccessToken()` method obtains a new one:
+
+```typescript
+async refreshAccessToken(): Promise<string> {
+  const refreshToken = this.getRefreshToken();
+
+  // Check if refresh token has expired before making network request
+  if (!checkJwtToken(refreshToken)) {
+    throw new Error("Refresh token has expired");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/v1/access_token`, {
+    method: "POST",
+    headers: {
+      "App-Id": APP_ID,
+      Authorization: `Bearer ${refreshToken ?? ""}`,
+    },
+    cache: "no-store",
+  });
+
+  if (response.status === 401) {
+    throw new Error("Unauthorized: Invalid refresh token or app ID mismatch");
+  }
+
+  const json: Record<string, any> = await response.json();
+  const payload = json.payload as { access_token: { token: string } };
+  const newAccessToken = payload.access_token.token;
+
+  // Update stored access token in memory
+  this.ACCESS_TOKEN = newAccessToken;
+
+  return newAccessToken;
+}
+```
+
+#### Getting a Valid Access Token
+
+The `getAccessToken()` method ensures you always have a valid access token by checking expiration and refreshing if needed:
+
+```typescript
+async getAccessToken(): Promise<string> {
+  let accessToken = this.getToken();
+
+  // Check if access token is valid
+  if (!accessToken || !checkJwtToken(accessToken)) {
+    // Access token is invalid or expired, refresh it
+    try {
+      accessToken = await this.refreshAccessToken();
+    } catch (error) {
+      throw new Error("Failed to refresh access token. Please login again.");
+    }
+  }
+
+  return accessToken;
+}
+```
+
+This method can be used whenever you need a valid access token for API calls or other purposes.
+
+#### Automatic Token Refresh with smtFetch
+
+The `smtFetch()` method wraps all API calls with automatic token validation and refresh using `getAccessToken()`:
+
+```typescript
+async smtFetch(url: string, options?: RequestInit): Promise<Response> {
+  const accessToken = await this.getAccessToken();
+
+  // Merge headers with App-Id and Authorization
+  const headers = {
+    ...options?.headers,
+    "App-Id": APP_ID,
+    Authorization: `Bearer ${accessToken}`,
+  };
+
+  // Perform the fetch with the updated headers
+  const response = await fetch(url, {
+    ...options,
+    headers,
+  });
+
+  return response;
+}
+```
+
+### Token Management in AuthContext
+
+The `AuthContext` (`src/context/AuthContext.tsx`) provides application-wide authentication state and automatically validates sessions on mount:
+
+```typescript
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Check if user is already logged in and fetch from API
+    const fetchUser = async () => {
+      try {
+        // This uses smtFetch internally, which handles token refresh
+        const currentUser = await authService.fetchCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        // If fetching the current user fails, clear the session and log out
+        await authService.logout();
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Validate refresh token has at least 5 minutes remaining
+    if (authService.isAuthenticated()) {
+      fetchUser();
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const login = async (credentials: LoginCredentials) => {
+    const { user } = await authService.login(credentials);
+    setUser(user);
+  };
+
+  const logout = async () => {
+    await authService.logout();
+    setUser(null);
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+```
+
+### Token Flow Summary
+
+1. **User logs in** → Access token (memory) + Refresh token (localStorage) stored
+2. **App initializes** → `AuthContext` checks if refresh token is valid (min 5 min remaining)
+3. **API request made** → `smtFetch()` checks if access token is valid
+4. **Access token expired** → Automatically refreshes using refresh token
+5. **Refresh token expired** → User redirected to login
+6. **User logs out** → Both tokens cleared from memory and localStorage
+
+### Key Benefits
+
+- **Automatic token refresh**: No manual intervention needed
+- **Secure storage**: Access tokens in memory (not persisted), refresh tokens in localStorage
+- **Proactive validation**: Tokens checked before requests to avoid failed API calls
+- **Minimum session time**: Ensures at least 5 minutes of valid session on app load
+- **Graceful degradation**: Falls back to login when refresh token expires
 
 ## Technologies Used
 
@@ -503,6 +855,7 @@ The full embedded viewer is available at `/main` but is considered **legacy**. F
 - **SweetAlert2** - Modal alerts and loaders
 - **smt-base-bridge** - Iframe communication library
 - **Webpack** - Module bundler
+- **jwt-decode** - JWT token decoding for expiration validation
 
 ## License
 

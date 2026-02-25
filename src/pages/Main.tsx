@@ -122,6 +122,7 @@ export const Main = () => {
       <main className="flex flex-col flex-1 p-4 h-full">
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
           <BridgedIframe
+            useRefreshToken
             ref={iframeRef}
             src="https://embedded.smartmedialabs.io/fifasandbox.beta/#/discover"
             className="w-full h-full rounded-lg shadow-lg border-0 flex-1"

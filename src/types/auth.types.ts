@@ -52,3 +52,8 @@ export interface ApiLoginResponse {
     };
   };
 }
+
+export interface ApiGetUserResponse {
+  request_id: string;
+  payload: ApiUserResponse;
+}
