@@ -14,6 +14,7 @@ import Swal from "sweetalert2";
 interface BridgedIframeProps {
   src: string;
   className?: string;
+  useRefreshToken?: boolean;
   onNavigation?: (
     feature: string,
     focus?: string,
@@ -42,7 +43,7 @@ export interface BridgedIframeHandle {
 export const BridgedIframe = forwardRef<
   BridgedIframeHandle,
   BridgedIframeProps
->(({ src, className, onNavigation }, ref) => {
+>(({ src, className, onNavigation, useRefreshToken }, ref) => {
   const [iframe, setIframe] = useState<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<ParentBridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
@@ -87,12 +88,23 @@ export const BridgedIframe = forwardRef<
 
     // Register session.get handler
     bridge.addRequestHandler("session.get", async () => {
-      const refreshToken = authService.getRefreshToken();
-      console.log(
-        "session.get called, returning refreshToken:",
-        refreshToken ? "present" : "null",
-      );
-      return { refreshToken };
+      // Access token or refresh token is supported
+      if (useRefreshToken) {
+        const refreshToken = authService.getRefreshToken();
+        console.log(
+          "session.get called, returning refreshToken:",
+          refreshToken ? "present" : "null",
+        );
+        return { refreshToken };
+      } else {
+                //If returning Access token, you are expected to manage the refresh token life cycle
+        const accessToken = await authService.getAccessToken();
+        console.log(
+          "session.get called, returning accessToken:",
+          accessToken ? "present" : "null",
+        );
+        return { accessToken };
+      }
     });
 
     // Register session.clear handler
