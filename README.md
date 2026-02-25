@@ -524,7 +524,149 @@ bridge.addRequestHandler("alert.notify", async () => {
 });
 ```
 
-### 6. Logout
+### 6. Dynamic Iframe Resizing with frame.resize
+
+The `BridgedIframe` component supports dynamic height adjustment based on the embedded content's size. This is particularly useful for components with variable height content that should scroll seamlessly as part of your page rather than having an internal scrollbar.
+
+#### When to Use sizeToContent
+
+Use the `sizeToContent` prop when:
+- The embedded component has **variable height content** that changes dynamically
+- You want the iframe to **scroll with your page** rather than having its own scrollbar
+- The content should feel like a **native part of your page** rather than a separate scrollable area
+- Examples: Discover page with dynamic content lists, search results, expandable sections
+
+**Do NOT use** `sizeToContent` when:
+- The component has a **fixed, known height**
+- You want the iframe to have its **own internal scrollbar**
+- The component is displayed in a **modal or fixed-size container**
+
+#### How It Works
+
+When `sizeToContent={true}` is set on the `BridgedIframe` component:
+
+1. The embedded component measures its content height
+2. It sends a `frame.resize` request through the bridge with the desired height
+3. The parent container updates the iframe's height to match
+4. The iframe grows/shrinks dynamically as content changes
+5. The page scrollbar handles scrolling instead of the iframe
+
+#### Implementation in BridgedIframe
+
+The `frame.resize` handler is automatically registered when the bridge is initialized:
+
+```typescript
+// Register frame.resize handler
+bridge.addRequestHandler("frame.resize", async ({ payload }) => {
+  if (!sizeToContent) {
+    return new BridgeError(
+      "NOT_SUPPORTED",
+      "frame.resize is not supported when sizeToContent is disabled",
+    );
+  }
+
+  const { height } = payload as { height: number };
+  
+  if (typeof height !== "number" || height < 0) {
+    return new BridgeError(
+      "INVALID_PARAMETER",
+      "height must be a positive number",
+    );
+  }
+
+  if (iframe) {
+    iframe.style.height = `${height}px`;
+    console.log(`Iframe height resized to ${height}px`);
+  }
+
+  return {};
+});
+```
+
+#### Usage Example: Discover Component
+
+The Discover component displays variable height content (challenges, rewards, etc.) that should scroll seamlessly with the page:
+
+```typescript
+// src/pages/Discover.tsx
+<BridgedIframe
+  ref={iframeRef}
+  src={`${host}/discover/?lang=${appLanguage}`}
+  className="w-full h-full rounded-lg shadow-lg border-0 grow"
+  onNavigation={onNavigation}
+  sizeToContent={true}  // Enable dynamic resizing
+/>
+```
+
+**Key points:**
+- Set `sizeToContent={true}` to enable the resize handler
+- The iframe will automatically adjust its height as the embedded content changes
+- No fixed height needed - the iframe grows/shrinks with content
+- Page-level scrolling provides a seamless user experience
+
+#### Usage Example: Modal (Fixed Size)
+
+For modals or fixed-size containers, do NOT use `sizeToContent`:
+
+```typescript
+// Modal with fixed dimensions - no sizeToContent
+{modalFocus?.type === "card" && (
+  <BridgedIframe
+    src={`${host}/card/?id=${modalFocus.id}&lang=${appLanguage}`}
+    className="w-full h-full rounded-lg shadow-2xl border-0"
+    onNavigation={onNavigation}
+    // sizeToContent NOT used - modal has fixed dimensions
+  />
+)}
+```
+
+#### Embedded Component Side (Child)
+
+From within the embedded component, send resize requests when content height changes:
+
+```typescript
+// Inside the embedded component
+const updateHeight = () => {
+  const contentHeight = document.body.scrollHeight;
+  
+  // Send resize request to parent
+  bridge.sendRequest("frame.resize", {
+    height: contentHeight
+  });
+};
+
+// Call when content changes
+useEffect(() => {
+  updateHeight();
+}, [contentData]);
+```
+
+#### Error Handling
+
+The `frame.resize` handler includes validation:
+
+- **NOT_SUPPORTED**: Returned when `sizeToContent` is not enabled on the component
+- **INVALID_PARAMETER**: Returned when height is not a positive number
+
+```typescript
+// If sizeToContent is false
+bridge.sendRequest("frame.resize", { height: 500 })
+// Returns: BridgeError("NOT_SUPPORTED", "frame.resize is not supported when sizeToContent is disabled")
+
+// If height is invalid
+bridge.sendRequest("frame.resize", { height: -100 })
+// Returns: BridgeError("INVALID_PARAMETER", "height must be a positive number")
+```
+
+#### Best Practices
+
+1. **Use for variable content**: Enable `sizeToContent` for components with dynamic, variable-height content
+2. **Disable for fixed layouts**: Don't use `sizeToContent` for modals, fixed-height containers, or components with internal scrolling
+3. **Performance**: The embedded component should debounce resize requests to avoid excessive updates
+4. **Initial height**: Set a reasonable initial height via CSS to avoid layout shift before the first resize
+5. **Minimum height**: Consider setting a `min-height` on the iframe to prevent it from collapsing completely
+
+### 7. Logout
 
 Logout can be initiated from either the container or the embedded components:
 
