@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -19,6 +19,8 @@ export const Discover = () => {
     width: 0,
     height: 0,
   });
+
+  const appLanguage = "en";
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const iframeRef = useRef<BridgedIframeHandle>(null);
@@ -36,7 +38,11 @@ export const Discover = () => {
   };
 
   const handleGoToMain = () => {
-    navigate("/");
+    navigate("/main");
+  };
+
+  const handleGoToChallenges = () => {
+    navigate("/challenges");
   };
 
   // Calculate modal dimensions with 16:10 aspect ratio
@@ -68,6 +74,20 @@ export const Discover = () => {
     return () => window.removeEventListener("resize", calculateDimensions);
   }, []);
 
+  const onNavigation = useCallback(async (feature: string, focus?: string) => {
+    if (feature === "discover") {
+      setModalFocus(undefined);
+      setShowModal(false);
+    } else if (feature === "engaged" && focus) {
+      setModalFocus({ id: focus, type: "card" });
+      setShowModal(true);
+    } else if (feature === "reward" && focus) {
+      setModalFocus({ id: focus, type: "reward" });
+      setShowModal(true);
+    }
+
+    return undefined;
+  }, []);
   return (
     <div className="min-h-screen flex flex-col bg-black">
       {/* Header */}
@@ -83,10 +103,16 @@ export const Discover = () => {
           </div>
           <div className="flex items-center gap-3">
             <button
+              onClick={handleGoToChallenges}
+              className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/40"
+            >
+              Go to Challenges
+            </button>
+            <button
               onClick={handleGoToMain}
               className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40"
             >
-              Go to Main
+              Go to Main (Legacy)
             </button>
             <button
               onClick={handleLogout}
@@ -104,19 +130,9 @@ export const Discover = () => {
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
           <BridgedIframe
             ref={iframeRef}
-            src={`${host}/discover/`}
+            src={`${host}/discover/?lang=${appLanguage}`}
             className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
-            onNavigation={async (feature, focus) => {
-              console.log("on navigation", feature, focus);
-              if (feature === "engaged" && focus) {
-                setModalFocus({ id: focus, type: "card" });
-                setShowModal(true);
-              } else if (feature === "reward" && focus) {
-                setModalFocus({ id: focus, type: "reward" });
-                setShowModal(true);
-              }
-              return undefined;
-            }}
+            onNavigation={onNavigation}
           />
         </div>
       </main>
@@ -147,24 +163,16 @@ export const Discover = () => {
             {/* BridgedIframe in modal */}
             {modalFocus?.type === "card" && (
               <BridgedIframe
-                src={`${host}/card/?id=${modalFocus.id}`}
+                src={`${host}/card/?id=${modalFocus.id}&lang=${appLanguage}`}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
+                onNavigation={onNavigation}
               />
             )}
             {modalFocus?.type === "reward" && (
               <BridgedIframe
-                src={`${host}/reward/?id=${modalFocus.id}`}
+                src={`${host}/reward/?id=${modalFocus.id}&lang=${appLanguage}`}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
-                onNavigation={async (feature, focus) => {
-                  if (feature === "discover") {
-                    setModalFocus(undefined);
-                    setShowModal(false);
-                  } else if (feature === "engaged" && focus) {
-                    setModalFocus({ id: focus, type: "card" });
-                    setShowModal(true);
-                  }
-                  return undefined;
-                }}
+                onNavigation={onNavigation}
               />
             )}
           </div>
