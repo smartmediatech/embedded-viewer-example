@@ -53,9 +53,13 @@ export const Discover = () => {
       const windowHeight = window.innerHeight;
       const aspectRatio = 10 / 16;
 
-      // Leave some padding (e.g., 80px on each side)
-      const maxWidth = windowWidth - 160;
-      const maxHeight = windowHeight - 160;
+      // Check if mobile (typically < 768px width)
+      const isMobile = windowWidth < 768;
+
+      // Use 10px padding on mobile, 80px on desktop
+      const padding = isMobile ? 10 : 80;
+      const maxWidth = windowWidth - padding * 2;
+      const maxHeight = windowHeight - padding * 2;
 
       let width = maxWidth;
       let height = width / aspectRatio;
@@ -85,7 +89,7 @@ export const Discover = () => {
     } else if (feature === "reward" && focus) {
       setModalFocus({ id: focus, type: "reward" });
       setShowModal(true);
-    }else if (feature === "ar-face-filter" && focus) {
+    } else if (feature === "ar-face-filter" && focus) {
       setModalFocus({ id: focus, type: "wearable" });
       setShowModal(true);
     }
@@ -96,7 +100,7 @@ export const Discover = () => {
     <div className="min-h-screen flex flex-col bg-black">
       {/* Header */}
       <header className="bg-black shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           <div className="flex items-center gap-4">
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-white">
@@ -105,22 +109,22 @@ export const Discover = () => {
               <span className="text-xs text-white">{user?.email}</span>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={handleGoToChallenges}
-              className="px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/40"
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-900 text-white rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/40 flex-1 sm:flex-none"
             >
-              Go to Challenges
+              Challenges
             </button>
             <button
               onClick={handleGoToMain}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40"
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40 flex-1 sm:flex-none"
             >
-              Go to Main (Legacy)
+              Main
             </button>
             <button
               onClick={handleLogout}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              className="px-3 sm:px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-900 text-white rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0 flex-1 sm:flex-none"
               disabled={loading}
             >
               {loading ? "Logging out..." : "Logout"}
