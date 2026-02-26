@@ -7,7 +7,7 @@ This project demonstrates a **container application** that embeds **FIFA Embedde
 This example showcases:
 - **User Authentication**: Login flow with email/password
 - **Auth Token Passing**: Securely passing refresh tokens to embedded components
-- **Isolated Embeddable Components**: Standalone components that can be embedded independently (Discover, Challenges, Card, Reward)
+- **Isolated Embeddable Components**: Standalone components that can be embedded independently (Discover, Challenges, Card, Reward, AR Wearable)
 - **Modal Navigation**: Opening detailed views in modals with navigation handling
 - **Bridge Communication**: Two-way communication using the `smt-base-bridge` library
 - **Logout Handling**: Coordinated logout between container and embedded components
@@ -20,8 +20,9 @@ The Discover component is the main landing page and shows:
 - Rewards available to claim
 - Challenges the user has started
 - Rewards they have acquired
+- AR wearables available to try on
 
-Supports navigation to card and reward details via modals.
+Supports navigation to card, reward, and AR wearable details via modals.
 
 **Example**: `src/pages/Discover.tsx`
 
@@ -43,6 +44,15 @@ Shows reward details and redemption options. Requires reward ID as query paramet
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
 
 **Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
+
+### 5. **AR Wearable Component**
+Displays AR wearable items (face filters, accessories, etc.) with interactive preview and try-on functionality. Requires wearable ID as query parameter.
+
+**⚠️ IMPORTANT**: Must include trailing `/` before query parameters
+
+**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/wearable/?id=789`
+
+**AR Permissions**: The AR Wearable component requires the `xr-spatial-tracking` permission to enable AR features. This is automatically configured in the `BridgedIframe` component via the iframe's `allow` attribute.
 
 ## Language Configuration
 
@@ -129,7 +139,7 @@ const [language, setLanguage] = useState('en');
 - Invalid or unsupported language codes will fall back to the browser language or English
 - The `lang` parameter can be combined with other query parameters (e.g., `?id=123&lang=es`)
 
-### 5. **Full Embedded Viewer** (Legacy)
+### 6. **Full Embedded Viewer** (Legacy)
 The full embedded viewer under `/main` provides the complete FIFA experience with all features (Discover, Map, Inventory, etc.). This is considered **legacy** and the isolated components above are the recommended approach for new integrations.
 
 **⚠️ IMPORTANT**: The legacy embedded viewer **only supports `refreshToken` access**. When using the full embedded viewer, you must configure the `session.get` handler to return a refresh token, not an access token.
@@ -146,6 +156,23 @@ The **`smt-base-bridge.min.js`** library from the `public/` directory must be lo
 ```
 
 This library provides the `SMTBaseBridge.ParentBridge` class used to establish communication with the child iframe.
+
+### AR Wearable Permissions
+
+For the AR Wearable component to function properly, the iframe must have the `xr-spatial-tracking` permission enabled. The `BridgedIframe` component automatically includes this permission along with other required permissions:
+
+```typescript
+<iframe
+  allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share; xr-spatial-tracking"
+/>
+```
+
+**Key Permissions for AR Wearables:**
+- **`xr-spatial-tracking`**: Required for AR/XR experiences and spatial tracking
+- **`camera`**: Required for camera access to display AR overlays
+- **`gyroscope`** and **`accelerometer`**: Required for device orientation tracking in AR experiences
+
+These permissions are automatically configured when using the `BridgedIframe` component from `src/components/BridgedIframe.tsx`.
 
 ## Configuration
 
@@ -432,6 +459,10 @@ When an embedded component needs authentication, it calls `session.get` through 
     } else if (feature === "reward" && focus) {
       // Open reward in modal
       setModalFocus({ id: focus, type: "reward" });
+      setShowModal(true);
+    } else if (feature === "ar-face-filter" && focus) {
+      // Open AR wearable in modal
+      setModalFocus({ id: focus, type: "wearable" });
       setShowModal(true);
     }
     return undefined;
@@ -779,24 +810,28 @@ yarn build
 - **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/challenges/`
 - **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/card/?id={cardId}`
 - **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/reward/?id={rewardId}`
+- **AR Wearable**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/wearable/?id={wearableId}`
 
 #### Sandbox Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/sandbox/components/discover/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/sandbox/components/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/sandbox/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/sandbox/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+- **AR Wearable**: `https://embedded.smtwallet.app/fifa/sandbox/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
 
 #### Test Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/test/components/discover/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/test/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/test/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+- **AR Wearable**: `https://embedded.smtwallet.app/fifa/test/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
 
 #### Live Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/live/components/discover/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/live/components/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/live/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/live/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+- **AR Wearable**: `https://embedded.smtwallet.app/fifa/live/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
 
 ### Full Embedded Viewer (Legacy)
 

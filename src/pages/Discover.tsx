@@ -6,14 +6,15 @@ import {
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
 
-const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
+const host =
+  "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
 
 export const Discover = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalFocus, setModalFocus] = useState<{
     id: string;
-    type: "card" | "reward";
+    type: "card" | "reward" | "wearable";
   }>();
   const [modalDimensions, setModalDimensions] = useState({
     width: 0,
@@ -83,6 +84,9 @@ export const Discover = () => {
       setShowModal(true);
     } else if (feature === "reward" && focus) {
       setModalFocus({ id: focus, type: "reward" });
+      setShowModal(true);
+    }else if (feature === "ar-face-filter" && focus) {
+      setModalFocus({ id: focus, type: "wearable" });
       setShowModal(true);
     }
 
@@ -172,6 +176,13 @@ export const Discover = () => {
             {modalFocus?.type === "reward" && (
               <BridgedIframe
                 src={`${host}/reward/?id=${modalFocus.id}&lang=${appLanguage}`}
+                className="w-full h-full rounded-lg shadow-2xl border-0"
+                onNavigation={onNavigation}
+              />
+            )}
+            {modalFocus?.type === "wearable" && (
+              <BridgedIframe
+                src={`${host}/wearable/?id=${modalFocus.id}&lang=${appLanguage}`}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
               />

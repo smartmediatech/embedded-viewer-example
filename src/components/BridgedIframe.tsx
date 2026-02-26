@@ -98,7 +98,7 @@ export const BridgedIframe = forwardRef<
         );
         return { refreshToken };
       } else {
-                //If returning Access token, you are expected to manage the refresh token life cycle
+        //If returning Access token, you are expected to manage the refresh token life cycle
         const accessToken = await authService.getAccessToken();
         console.log(
           "session.get called, returning accessToken:",
@@ -199,7 +199,6 @@ export const BridgedIframe = forwardRef<
       }
 
       const { height } = payload as { height: number };
-      
       if (typeof height !== "number" || height < 0) {
         return new BridgeError(
           "INVALID_PARAMETER",
@@ -265,7 +264,7 @@ export const BridgedIframe = forwardRef<
       src={iframeSrc || undefined}
       className={className}
       title="Embedded Content"
-      allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share"
+      allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share; xr-spatial-tracking"
     />
   );
 });
