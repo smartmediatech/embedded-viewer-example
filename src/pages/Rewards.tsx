@@ -6,10 +6,9 @@ import {
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
 
-const host =
-  "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
+const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
 
-export const Discover = () => {
+export const Rewards = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [modalFocus, setModalFocus] = useState<{
@@ -42,8 +41,8 @@ export const Discover = () => {
     navigate("/main");
   };
 
-  const handleGoToRewards = () => {
-    navigate("/rewards");
+  const handleGoToChallenges = () => {
+    navigate("/discover");
   };
 
   // Calculate modal dimensions with 16:10 aspect ratio
@@ -111,10 +110,10 @@ export const Discover = () => {
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
             <button
-              onClick={handleGoToRewards}
+              onClick={handleGoToChallenges}
               className="px-3 sm:px-4 py-2 bg-gradient-to-r from-orange-600 to-orange-900 text-white rounded-lg text-xs sm:text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-orange-500/40 flex-1 sm:flex-none"
             >
-              Rewards
+              Discover
             </button>
             <button
               onClick={handleGoToMain}
@@ -138,7 +137,7 @@ export const Discover = () => {
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
           <BridgedIframe
             ref={iframeRef}
-            src={`${host}/discover/?lang=${appLanguage}`}
+            src={`${host}/rewards/?lang=${appLanguage}`}
             className="w-full h-full rounded-lg shadow-lg border-0 grow"
             onNavigation={onNavigation}
             sizeToContent
