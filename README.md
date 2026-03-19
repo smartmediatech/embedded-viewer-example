@@ -241,6 +241,7 @@ const environmentConfigs = {
 
 #### Test Environment
 - **Base URL**: `https://embedded.smtwallet.app/fifa/test/components/`
+- **Development URL**: `https://embedded.smtwallet.app/fifa/test/components/dev/` (allows using sandbox config on test origin, should only be used for development)
 - **Target site**: `https://ppr-www.fifa.com`
 - **App ID**: `4290980e-0b00-42fb-8b3e-c469af9823df`
 
@@ -825,6 +826,13 @@ yarn build
 - **Card**: `https://embedded.smtwallet.app/fifa/test/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/test/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
 - **AR Wearable**: `https://embedded.smtwallet.app/fifa/test/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
+
+#### Test Environment - Development URLs (for development only)
+- **Discover**: `https://embedded.smtwallet.app/fifa/test/components/dev/discover/`
+- **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/dev/challenges/`
+- **Card**: `https://embedded.smtwallet.app/fifa/test/components/dev/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
+- **Reward**: `https://embedded.smtwallet.app/fifa/test/components/dev/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
+- **Note**: These URLs allow using sandbox config on test origin and should only be used for development purposes
 
 #### Live Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/live/components/discover/`
