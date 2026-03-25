@@ -26,26 +26,31 @@ Supports navigation to card, reward, and AR wearable details via modals.
 
 **Example**: `src/pages/Discover.tsx`
 
-### 2. **Challenges Component**
+### 2. **Rewards Component**
+Displays the user's rewards, including rewards they have acquired and can claim. Supports navigation to individual reward details, engaged cards, and AR wearables via modals.
+
+**Example**: `src/pages/Rewards.tsx`
+
+### 3. **Challenges Component**
 Displays challenges that the user has started and their progress. Supports navigation to engaged cards via modal.
 
 **Example**: `src/pages/Challenges.tsx`
 
-### 3. **Card Component**
+### 4. **Card Component**
 Displays detailed card information. Requires card ID as query parameter.
 
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
 
 **Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123`
 
-### 4. **Reward Component**
+### 5. **Reward Component**
 Shows reward details and redemption options. Requires reward ID as query parameter.
 
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
 
 **Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
 
-### 5. **AR Wearable Component**
+### 6. **AR Wearable Component**
 Displays AR wearable items (face filters, accessories, etc.) with interactive preview and try-on functionality. Requires wearable ID as query parameter.
 
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
@@ -139,7 +144,7 @@ const [language, setLanguage] = useState('en');
 - Invalid or unsupported language codes will fall back to the browser language or English
 - The `lang` parameter can be combined with other query parameters (e.g., `?id=123&lang=es`)
 
-### 6. **Full Embedded Viewer** (Legacy)
+### 7. **Full Embedded Viewer** (Legacy)
 The full embedded viewer under `/main` provides the complete FIFA experience with all features (Discover, Map, Inventory, etc.). This is considered **legacy** and the isolated components above are the recommended approach for new integrations.
 
 **⚠️ IMPORTANT**: The legacy embedded viewer **only supports `refreshToken` access**. When using the full embedded viewer, you must configure the `session.get` handler to return a refresh token, not an access token.
@@ -468,6 +473,37 @@ When an embedded component needs authentication, it calls `session.get` through 
     }
     return undefined;
   }}
+/>
+```
+
+**Example: Rewards Page** (`src/pages/Rewards.tsx`):
+
+```typescript
+<BridgedIframe
+  ref={iframeRef}
+  src={`${host}/rewards/?lang=${appLanguage}`}
+  className="w-full h-full rounded-lg shadow-lg border-0 grow"
+  onNavigation={async (feature, focus) => {
+    if (feature === "discover") {
+      // Navigate back to discover
+      setModalFocus(undefined);
+      setShowModal(false);
+    } else if (feature === "engaged" && focus) {
+      // Open card in modal
+      setModalFocus({ id: focus, type: "card" });
+      setShowModal(true);
+    } else if (feature === "reward" && focus) {
+      // Open reward in modal
+      setModalFocus({ id: focus, type: "reward" });
+      setShowModal(true);
+    } else if (feature === "ar-face-filter" && focus) {
+      // Open AR wearable in modal
+      setModalFocus({ id: focus, type: "wearable" });
+      setShowModal(true);
+    }
+    return undefined;
+  }}
+  sizeToContent
 />
 ```
 
@@ -808,6 +844,7 @@ yarn build
 
 #### Local Development (for local development only)
 - **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/discover/`
+- **Rewards**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/rewards/`
 - **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/challenges/`
 - **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/card/?id={cardId}`
 - **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/reward/?id={rewardId}`
@@ -815,6 +852,7 @@ yarn build
 
 #### Sandbox Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/sandbox/components/discover/`
+- **Rewards**: `https://embedded.smtwallet.app/fifa/sandbox/components/rewards/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/sandbox/components/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/sandbox/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/sandbox/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
@@ -822,6 +860,7 @@ yarn build
 
 #### Test Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/test/components/discover/`
+- **Rewards**: `https://embedded.smtwallet.app/fifa/test/components/rewards/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/test/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/test/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
@@ -829,6 +868,7 @@ yarn build
 
 #### Test Environment - Development URLs (for development only)
 - **Discover**: `https://embedded.smtwallet.app/fifa/test/components/dev/discover/`
+- **Rewards**: `https://embedded.smtwallet.app/fifa/test/components/dev/rewards/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/dev/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/test/components/dev/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/test/components/dev/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
@@ -836,6 +876,7 @@ yarn build
 
 #### Live Environment
 - **Discover**: `https://embedded.smtwallet.app/fifa/live/components/discover/`
+- **Rewards**: `https://embedded.smtwallet.app/fifa/live/components/rewards/`
 - **Challenges**: `https://embedded.smtwallet.app/fifa/live/components/challenges/`
 - **Card**: `https://embedded.smtwallet.app/fifa/live/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
 - **Reward**: `https://embedded.smtwallet.app/fifa/live/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**

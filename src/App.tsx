@@ -1,10 +1,11 @@
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import { Login } from './pages/Login';
-import { Main } from './pages/Main';
-import { Challenges } from './pages/Challenges';
-import { Discover } from './pages/Discover';
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Login } from "./pages/Login";
+import { Main } from "./pages/Main";
+import { Challenges } from "./pages/Challenges";
+import { Discover } from "./pages/Discover";
+import { Rewards } from "./pages/Rewards";
 
 function App() {
   return (
@@ -12,14 +13,7 @@ function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute>
-                <Discover />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/" element={<Navigate to="/rewards" replace />} />
           <Route
             path="/discover"
             element={
@@ -33,6 +27,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Challenges />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rewards"
+            element={
+              <ProtectedRoute>
+                <Rewards />
               </ProtectedRoute>
             }
           />
