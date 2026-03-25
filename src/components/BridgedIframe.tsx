@@ -11,6 +11,17 @@ import { authService } from "../services/authService";
 import ParentBridge from "@/types/smt-base-bridge/parent-bridge";
 import Swal from "sweetalert2";
 
+// Extend Window interface to include OneTrust
+declare global {
+  interface Window {
+    OneTrust?: {
+      OnConsentChanged: (callback: () => void) => void;
+      IsAlertBoxClosed: () => boolean;
+    };
+    OnetrustActiveGroups?: string;
+  }
+}
+
 interface BridgedIframeProps {
   src: string;
   className?: string;
@@ -50,6 +61,54 @@ export const BridgedIframe = forwardRef<
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const navigate = useNavigate();
 
+ const getCookie = (name: string): string | null => {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`)
+  );
+
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+// Helper function to check OneTrust consent
+const checkOneTrustConsent = useCallback((): {
+  canTrack: boolean;
+  isReady: boolean;
+} => {
+  // OneTrust script not loaded yet
+  if (!window.OneTrust) {
+    return { canTrack: false, isReady: false };
+  }
+
+  // True once user has interacted with banner / preference center
+  const hasInteracted = !!getCookie("OptanonAlertBoxClosed");
+
+  // Active consent groups
+  const activeGroups = window.OnetrustActiveGroups || "";
+  const activeGroupList = activeGroups
+      .split(",")
+      .map((group) => group.trim())
+      .filter((group) => group.length > 0);
+    const canTrack = activeGroupList.includes("C0002");
+
+  return {
+    canTrack,
+    isReady: hasInteracted,
+  };
+}, []);
+  // Send consent update to child iframe
+  const sendConsentUpdate = useCallback(() => {
+    if (!bridgeRef.current) return;
+
+    const consentStatus = checkOneTrustConsent();
+    console.log("Sending consent update to child:", consentStatus);
+
+    try {
+      bridgeRef.current.sendRequest("tracking.consent.update", consentStatus);
+    } catch (error) {
+      console.error("Error sending consent update:", error);
+    }
+  }, [checkOneTrustConsent]);
+
   const setIframeRef = useCallback(
     (element: HTMLIFrameElement | null) => {
       if (element !== iframe) {
@@ -58,6 +117,23 @@ export const BridgedIframe = forwardRef<
     },
     [iframe],
   );
+
+  // Set up OneTrust consent change listener
+  useEffect(() => {
+    if (!window.OneTrust) {
+      console.warn("OneTrust not available");
+      return;
+    }
+
+    // Register callback for consent changes
+    window.OneTrust.OnConsentChanged(() => {
+      console.log("OneTrust consent changed");
+      sendConsentUpdate();
+    });
+
+    console.log("OneTrust consent listener registered");
+  }, [sendConsentUpdate]);
+
   useEffect(() => {
     if (!iframe) {
       console.error("Iframe not available");
@@ -86,6 +162,13 @@ export const BridgedIframe = forwardRef<
       meta: {},
     });
     bridgeRef.current = bridge;
+
+    // Register tracking.consent.request handler
+    bridge.addRequestHandler("tracking.consent.request", async () => {
+      const consentStatus = checkOneTrustConsent();
+      console.log("tracking.consent.request called, returning:", consentStatus);
+      return consentStatus;
+    });
 
     // Register session.get handler
     bridge.addRequestHandler("session.get", async () => {
@@ -219,9 +302,17 @@ export const BridgedIframe = forwardRef<
     // Now that bridge is configured, set the iframe src
     setIframeSrc(src);
 
+    // Send initial consent status once bridge is ready
+    // Use a small delay to ensure child is ready to receive
+    const consentTimer = setTimeout(() => {
+      sendConsentUpdate();
+    }, 1000);
+
     // Cleanup
     return () => {
+      clearTimeout(consentTimer);
       if (bridge) {
+        bridge.removeRequestHandler("tracking.consent.request");
         bridge.removeRequestHandler("session.get");
         bridge.removeRequestHandler("session.clear");
         bridge.removeRequestHandler("navigation.go");
@@ -241,7 +332,15 @@ export const BridgedIframe = forwardRef<
       // Close any open SweetAlert modals on cleanup
       Swal.close();
     };
-  }, [src, navigate, iframe, onNavigation, sizeToContent]);
+  }, [
+    src,
+    navigate,
+    iframe,
+    onNavigation,
+    sizeToContent,
+    checkOneTrustConsent,
+    sendConsentUpdate,
+  ]);
 
   // Expose goTo function via ref
   useImperativeHandle(ref, () => ({

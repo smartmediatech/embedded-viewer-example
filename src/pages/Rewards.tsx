@@ -6,7 +6,8 @@ import {
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
 
-const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
+const host =
+  "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
 
 export const Rewards = () => {
   const [loading, setLoading] = useState(false);

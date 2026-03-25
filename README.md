@@ -144,7 +144,179 @@ const [language, setLanguage] = useState('en');
 - Invalid or unsupported language codes will fall back to the browser language or English
 - The `lang` parameter can be combined with other query parameters (e.g., `?id=123&lang=es`)
 
-### 7. **Full Embedded Viewer** (Legacy)
+### 7. **Tracking Consent Integration** (OneTrust)
+
+The `BridgedIframe` component integrates with OneTrust to manage user tracking consent and communicate consent status to embedded components.
+
+#### OneTrust Setup
+
+OneTrust is loaded in the HTML file:
+
+```html
+<!-- public/index.html -->
+<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"  type="text/javascript" charset="UTF-8" data-domain-script="<your-onetrust-key>" ></script>
+```
+
+#### Bridge Messages for Tracking Consent
+
+**1. Request Handler: `tracking.consent.request`**
+
+Child iframes can request the current consent status:
+
+```typescript
+// Child iframe requests consent status
+const response = await bridge.sendRequest("tracking.consent.request", {});
+// Returns: { canTrack: boolean, isReady: boolean }
+```
+
+**Response format:**
+- `canTrack`: `true` if user has consented to tracking (OneTrust group C0002), `false` otherwise
+- `isReady`: `true` if user has interacted with the OneTrust banner/preference center, `false` otherwise
+
+**Implementation in BridgedIframe:**
+
+```typescript
+// Helper function to get cookie value
+const getCookie = (name: string): string | null => {
+  const match = document.cookie.match(
+    new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`)
+  );
+  return match ? decodeURIComponent(match[1]) : null;
+};
+
+// Helper function to check OneTrust consent
+const checkOneTrustConsent = useCallback((): {
+  canTrack: boolean;
+  isReady: boolean;
+} => {
+  // OneTrust script not loaded yet
+  if (!window.OneTrust) {
+    return { canTrack: false, isReady: false };
+  }
+
+  // True once user has interacted with banner / preference center
+  const hasInteracted = !!getCookie("OptanonAlertBoxClosed");
+
+  // Active consent groups
+  const activeGroups = window.OnetrustActiveGroups || "";
+  const activeGroupList = activeGroups
+    .split(",")
+    .map((group) => group.trim())
+    .filter((group) => group.length > 0);
+  const canTrack = activeGroupList.includes("C0002");
+
+  return {
+    canTrack,
+    isReady: hasInteracted,
+  };
+}, []);
+
+// Register request handler
+bridge.addRequestHandler("tracking.consent.request", async () => {
+  const consentStatus = checkOneTrustConsent();
+  console.log("tracking.consent.request called, returning:", consentStatus);
+  return consentStatus;
+});
+```
+
+**Key Implementation Details:**
+
+- **`isReady` Detection**: Uses the `OptanonAlertBoxClosed` cookie to determine if the user has interacted with the OneTrust banner or preference center. This is more reliable than checking if `window.OneTrust` exists, as the script may be loaded but the user hasn't made a choice yet.
+
+- **`canTrack` Detection**: Parses the `OnetrustActiveGroups` string (comma-separated list) into an array and checks if group `C0002` is present. This is more robust than using `includes()` on the raw string, which could match partial group IDs.
+
+**2. Push via `tracking.consent.update`**
+
+The parent sends consent updates to child iframes using `sendRequest`:
+
+```typescript
+// Parent sends consent update to child
+bridgeRef.current.sendRequest("tracking.consent.update", consentStatus);
+```
+
+This is sent:
+- When OneTrust consent preferences change (via `OnConsentChanged` callback)
+- 1 second after iframe initialization (to provide initial status)
+
+**Implementation in BridgedIframe:**
+
+```typescript
+const sendConsentUpdate = useCallback(() => {
+  if (!bridgeRef.current) return;
+
+  const consentStatus = checkOneTrustConsent();
+  console.log("Sending consent update to child:", consentStatus);
+
+  try {
+    bridgeRef.current.sendRequest("tracking.consent.update", consentStatus);
+  } catch (error) {
+    console.error("Error sending consent update:", error);
+  }
+}, [checkOneTrustConsent]);
+
+// Listen for OneTrust consent changes
+useEffect(() => {
+  if (!window.OneTrust) {
+    console.warn("OneTrust not available");
+    return;
+  }
+
+  // Register callback for consent changes
+  window.OneTrust.OnConsentChanged(() => {
+    console.log("OneTrust consent changed");
+    sendConsentUpdate();
+  });
+
+  console.log("OneTrust consent listener registered");
+}, [sendConsentUpdate]);
+
+// Send initial consent status after bridge initialization
+useEffect(() => {
+  // ... bridge setup code ...
+
+  // Send initial consent status once bridge is ready
+  // Use a small delay to ensure child is ready to receive
+  const consentTimer = setTimeout(() => {
+    sendConsentUpdate();
+  }, 1000);
+
+  return () => {
+    clearTimeout(consentTimer);
+    // ... cleanup code ...
+  };
+}, [src, navigate, iframe, onNavigation, sizeToContent, checkOneTrustConsent, sendConsentUpdate]);
+```
+
+#### Consent Status Object
+
+Both messages return/send the same consent status object:
+
+```typescript
+{
+  canTrack: boolean,  // true if C0002 group is active
+  isReady: boolean    // true if user has interacted with OneTrust banner/preference center
+}
+```
+
+#### OneTrust Consent Groups
+
+The implementation checks for OneTrust group **C0002** (performance/analytics cookies). To use a different group ID, update `checkOneTrustConsent` in `BridgedIframe.tsx`:
+
+```typescript
+const canTrack = activeGroupList.includes("C0002"); // Update group ID as needed
+```
+
+#### Important Notes
+
+- **Cookie-Based Detection**: The `isReady` flag relies on the `OptanonAlertBoxClosed` cookie, which OneTrust sets when the user interacts with the consent banner or preference center.
+
+- **Robust Group Parsing**: The active groups are parsed into an array to avoid false positives from partial string matches (e.g., "C0002" vs "C00021").
+
+- **Initial Status Delay**: A 1-second delay is used when sending the initial consent status to ensure the child iframe's bridge is ready to receive the message.
+
+- **Automatic Updates**: The parent automatically sends consent updates whenever the user changes their preferences through OneTrust's UI.
+
+### 8. **Full Embedded Viewer** (Legacy)
 The full embedded viewer under `/main` provides the complete FIFA experience with all features (Discover, Map, Inventory, etc.). This is considered **legacy** and the isolated components above are the recommended approach for new integrations.
 
 **⚠️ IMPORTANT**: The legacy embedded viewer **only supports `refreshToken` access**. When using the full embedded viewer, you must configure the `session.get` handler to return a refresh token, not an access token.
