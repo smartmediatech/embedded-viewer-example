@@ -41,21 +41,21 @@ Displays detailed card information. Requires card ID as query parameter.
 
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
 
-**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123`
+**Example**: `https://embedded.smtwallet.app/fifa/sandbox/components/card/?id=123`
 
 ### 5. **Reward Component**
 Shows reward details and redemption options. Requires reward ID as query parameter.
 
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
 
-**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/reward/?id=456`
+**Example**: `https://embedded.smtwallet.app/fifa/sandbox/components/reward/?id=456`
 
 ### 6. **AR Wearable Component**
 Displays AR wearable items (face filters, accessories, etc.) with interactive preview and try-on functionality. Requires wearable ID as query parameter.
 
 **⚠️ IMPORTANT**: Must include trailing `/` before query parameters
 
-**Example**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/wearable/?id=789`
+**Example**: `https://embedded.smtwallet.app/fifa/sandbox/components/wearable/?id=789`
 
 **AR Permissions**: The AR Wearable component requires the `xr-spatial-tracking` permission to enable AR features. This is automatically configured in the `BridgedIframe` component via the iframe's `allow` attribute.
 
@@ -67,9 +67,9 @@ All embedded components support language configuration via the `lang` query para
 
 **⚠️ IMPORTANT**: When setting query parameters (including `lang`), the trailing `/` must be present before the `?` character.
 
-**Correct Format**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/?lang=es`
+**Correct Format**: `https://embedded.smtwallet.app/fifa/sandbox/components/discover/?lang=es`
 
-**Incorrect Format**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover?lang=es` ❌ (missing `/` before `?`)
+**Incorrect Format**: `https://embedded.smtwallet.app/fifa/sandbox/components/discover?lang=es` ❌ (missing `/` before `?`)
 
 ### Language Detection Behavior
 
@@ -106,7 +106,7 @@ The specific languages supported depend on the FIFA configuration. Contact **SMT
 **Discover component with Spanish**:
 ```typescript
 <BridgedIframe
-  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/?lang=es"
+  src="https://embedded.smtwallet.app/fifa/sandbox/components/discover/?lang=es"
   className="w-full h-full"
 />
 ```
@@ -114,7 +114,7 @@ The specific languages supported depend on the FIFA configuration. Contact **SMT
 **Challenges component with French**:
 ```typescript
 <BridgedIframe
-  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/?lang=fr"
+  src="https://embedded.smtwallet.app/fifa/sandbox/components/challenges/?lang=fr"
   className="w-full h-full"
 />
 ```
@@ -122,7 +122,7 @@ The specific languages supported depend on the FIFA configuration. Contact **SMT
 **Card component with language and ID parameters**:
 ```typescript
 <BridgedIframe
-  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/card/?id=123&lang=de"
+  src="https://embedded.smtwallet.app/fifa/sandbox/components/card/?id=123&lang=de"
   className="w-full h-full"
 />
 ```
@@ -132,7 +132,7 @@ The specific languages supported depend on the FIFA configuration. Contact **SMT
 const [language, setLanguage] = useState('en');
 
 <BridgedIframe
-  src={`https://embedded.smartmedialabs.io/fifasandbox.beta/components/discover/?lang=${language}`}
+  src={`https://embedded.smtwallet.app/fifa/sandbox/components/discover/?lang=${language}`}
   className="w-full h-full"
 />
 ```
@@ -355,28 +355,24 @@ These permissions are automatically configured when using the `BridgedIframe` co
 
 ### Content Security Policy (CSP)
 
-To embed the FIFA components, your parent application must configure the Content Security Policy to allow frames from the required domains. Add the following `frame-src` directive to your CSP:
+To embed the FIFA components, your parent application must configure the Content Security Policy to allow frames from the embedded component domain. Add the following `frame-src` directive to your CSP:
 
 ```
-frame-src https://embedded.smartmedialabs.io https://embedded.smtwallet.app
+frame-src https://embedded.smtwallet.app
 ```
 
 **Example CSP Header:**
 
 ```
-Content-Security-Policy: frame-src 'self' https://embedded.smartmedialabs.io https://embedded.smtwallet.app;
+Content-Security-Policy: frame-src 'self' https://embedded.smtwallet.app;
 ```
 
 **Example Meta Tag (for development):**
 
 ```html
 <meta http-equiv="Content-Security-Policy" 
-      content="frame-src 'self' https://embedded.smartmedialabs.io https://embedded.smtwallet.app;">
+      content="frame-src 'self' https://embedded.smtwallet.app;">
 ```
-
-**Note:** 
-- `https://embedded.smartmedialabs.io` is used for local development
-- `https://embedded.smtwallet.app` is used for sandbox, test, and live environments
 
 ### Environment Configurations
 
@@ -406,26 +402,18 @@ const environmentConfigs = {
 
 ### Environment-Specific URLs
 
-#### Local Development
-- **For local development**: Use `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/`
-- Use this URL when developing and testing locally
-- **Important**: The container app must not have a referrer policy that blocks the child iframe from accessing the referrer. Ensure your referrer policy allows the embedded components to receive referrer information for proper authentication and functionality.
+| Environment | Base URL | Target Site | Local Dev |
+|---|---|---|---|
+| Sandbox | `https://embedded.smtwallet.app/fifa/sandbox/components/` | `https://dev-www.fifa.com` | Supported |
+| Test | `https://embedded.smtwallet.app/fifa/test/components/` | `https://ppr-www.fifa.com` | Supported |
+| Live | `https://embedded.smtwallet.app/fifa/live/components/` | `https://www.fifa.com` | Not supported |
 
-#### Sandbox Environment
-- **Base URL**: `https://embedded.smtwallet.app/fifa/sandbox/components/`
-- **Target site**: `https://dev-www.fifa.com`
-- **App ID**: `46fcb627-b237-4706-8175-299801d97cb5`
+#### Parent Origin Restrictions
 
-#### Test Environment
-- **Base URL**: `https://embedded.smtwallet.app/fifa/test/components/`
-- **Development URL**: `https://embedded.smtwallet.app/fifa/test/components/dev/` (allows using sandbox config on test origin, should only be used for development)
-- **Target site**: `https://ppr-www.fifa.com`
-- **App ID**: `4290980e-0b00-42fb-8b3e-c469af9823df`
+The embedded components validate the parent page's origin via `postMessage`. This controls which sites can embed and communicate with the components:
 
-#### Live Environment
-- **Base URL**: `https://embedded.smtwallet.app/fifa/live/components/`
-- **Target site**: `https://www.fifa.com`
-- **App ID**: `be435e80-9b2e-4526-aa0c-070b2673aa64`
+- **Sandbox and Test**: Accept any parent origin (`*`), so local development (e.g. `https://localhost:3000`) works with these environments.
+- **Live**: Restricted to `https://www.fifa.com` only. Embedding from any other origin will fail as the bridge handshake will be rejected.
 
 ## Key Features
 
@@ -684,7 +672,7 @@ When an embedded component needs authentication, it calls `session.get` through 
 ```typescript
 <BridgedIframe
   ref={iframeRef}
-  src="https://embedded.smartmedialabs.io/fifasandbox.beta/components/challenges/"
+  src="https://embedded.smtwallet.app/fifa/sandbox/components/challenges/"
   className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
   onNavigation={async (feature, focus) => {
     if (feature === "engaged" && focus) {
@@ -1014,45 +1002,23 @@ yarn build
 
 ### Isolated Components (Recommended)
 
-#### Local Development (for local development only)
-- **Discover**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/discover/`
-- **Rewards**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/rewards/`
-- **Challenges**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/challenges/`
-- **Card**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/card/?id={cardId}`
-- **Reward**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/reward/?id={rewardId}`
-- **AR Wearable**: `https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev/wearable/?id={wearableId}`
+Append the component path to the Base URL for your target environment (see [Environment-Specific URLs](#environment-specific-urls) above):
 
-#### Sandbox Environment
-- **Discover**: `https://embedded.smtwallet.app/fifa/sandbox/components/discover/`
-- **Rewards**: `https://embedded.smtwallet.app/fifa/sandbox/components/rewards/`
-- **Challenges**: `https://embedded.smtwallet.app/fifa/sandbox/components/challenges/`
-- **Card**: `https://embedded.smtwallet.app/fifa/sandbox/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
-- **Reward**: `https://embedded.smtwallet.app/fifa/sandbox/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
-- **AR Wearable**: `https://embedded.smtwallet.app/fifa/sandbox/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
+| Component | Path |
+|---|---|
+| Discover | `discover/` |
+| Rewards | `rewards/` |
+| Challenges | `challenges/` |
+| Card | `card/?id={cardId}` |
+| Reward | `reward/?id={rewardId}` |
+| AR Wearable | `wearable/?id={wearableId}` |
 
-#### Test Environment
-- **Discover**: `https://embedded.smtwallet.app/fifa/test/components/discover/`
-- **Rewards**: `https://embedded.smtwallet.app/fifa/test/components/rewards/`
-- **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/challenges/`
-- **Card**: `https://embedded.smtwallet.app/fifa/test/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
-- **Reward**: `https://embedded.smtwallet.app/fifa/test/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
-- **AR Wearable**: `https://embedded.smtwallet.app/fifa/test/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
+**Examples**:
+- Sandbox: `https://embedded.smtwallet.app/fifa/sandbox/components/discover/`
+- Test: `https://embedded.smtwallet.app/fifa/test/components/card/?id=123`
+- Live: `https://embedded.smtwallet.app/fifa/live/components/rewards/`
 
-#### Test Environment - Development URLs (for development only)
-- **Discover**: `https://embedded.smtwallet.app/fifa/test/components/dev/discover/`
-- **Rewards**: `https://embedded.smtwallet.app/fifa/test/components/dev/rewards/`
-- **Challenges**: `https://embedded.smtwallet.app/fifa/test/components/dev/challenges/`
-- **Card**: `https://embedded.smtwallet.app/fifa/test/components/dev/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
-- **Reward**: `https://embedded.smtwallet.app/fifa/test/components/dev/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
-- **Note**: These URLs allow using sandbox config on test origin and should only be used for development purposes
-
-#### Live Environment
-- **Discover**: `https://embedded.smtwallet.app/fifa/live/components/discover/`
-- **Rewards**: `https://embedded.smtwallet.app/fifa/live/components/rewards/`
-- **Challenges**: `https://embedded.smtwallet.app/fifa/live/components/challenges/`
-- **Card**: `https://embedded.smtwallet.app/fifa/live/components/card/?id={cardId}` ⚠️ **Requires trailing `/` before `?`**
-- **Reward**: `https://embedded.smtwallet.app/fifa/live/components/reward/?id={rewardId}` ⚠️ **Requires trailing `/` before `?`**
-- **AR Wearable**: `https://embedded.smtwallet.app/fifa/live/components/wearable/?id={wearableId}` ⚠️ **Requires trailing `/` before `?`**
+**⚠️ IMPORTANT**: For components with query parameters (Card, Reward, AR Wearable), the trailing `/` must be present before the `?` character.
 
 ### Full Embedded Viewer (Legacy)
 
