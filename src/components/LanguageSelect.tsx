@@ -1,3 +1,5 @@
+import { Select } from "@base-ui/react/select";
+import { CheckIcon, CaretUpDownIcon } from "@phosphor-icons/react";
 import { useApp } from "../context/AppContext";
 
 const LANGUAGES = [
@@ -19,22 +21,47 @@ export const LanguageSelect = () => {
   const { language, setLanguage } = useApp();
 
   return (
-    <div className="relative w-16">
-      <select
-        value={language}
-        onChange={(e) => setLanguage(e.target.value)}
-        className="w-full rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-sm font-medium text-transparent transition-colors appearance-none cursor-pointer hover:bg-white/20"
+    <Select.Root
+      value={language}
+      onValueChange={(value) => {
+        if (value !== null) setLanguage(value);
+      }}
+    >
+      <Select.Trigger
         aria-label="Select language"
+        className="flex h-8 min-w-16 items-center justify-center gap-1.5 rounded-full border border-black/15 bg-black/5 px-3 text-sm font-medium text-black uppercase transition-colors hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/30 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:focus-visible:outline-white/50 cursor-pointer"
       >
-        {LANGUAGES.map((lang) => (
-          <option key={lang.code} value={lang.code} className="bg-gray-900 text-white">
-            {`${lang.label} (${lang.code})`}
-          </option>
-        ))}
-      </select>
-      <span className="pointer-events-none absolute inset-0 flex items-center justify-center text-sm font-medium text-white uppercase">
-        {language}
-      </span>
-    </div>
+        <Select.Value>
+          {(value) => (value as string)?.toUpperCase() ?? "EN"}
+        </Select.Value>
+        <Select.Icon>
+          <CaretUpDownIcon size={14} weight="bold" className="text-black/40 dark:text-white/50" />
+        </Select.Icon>
+      </Select.Trigger>
+
+      <Select.Portal>
+        <Select.Positioner side="bottom" align="center" sideOffset={4} className="z-50">
+          <Select.Popup className="rounded-xl border border-black/10 bg-white/95 p-1 shadow-2xl shadow-black/10 backdrop-blur dark:border-white/10 dark:bg-neutral-950/95 dark:shadow-black/40 origin-[var(--transform-origin)] transition-[transform,scale,opacity] data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0">
+            {LANGUAGES.map((lang) => (
+              <Select.Item
+                key={lang.code}
+                value={lang.code}
+                className="grid cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-black/60 select-none data-[highlighted]:bg-black/5 data-[highlighted]:text-black dark:text-white/70 dark:data-[highlighted]:bg-white/10 dark:data-[highlighted]:text-white outline-none"
+              >
+                <Select.ItemIndicator className="col-start-1">
+                  <CheckIcon size={14} weight="bold" />
+                </Select.ItemIndicator>
+                <Select.ItemText className="col-start-2">
+                  {lang.label}
+                  <span className="ml-1.5 uppercase text-black/30 dark:text-white/40">
+                    {lang.code}
+                  </span>
+                </Select.ItemText>
+              </Select.Item>
+            ))}
+          </Select.Popup>
+        </Select.Positioner>
+      </Select.Portal>
+    </Select.Root>
   );
 };
