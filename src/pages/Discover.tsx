@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { XIcon } from "@phosphor-icons/react";
 import {
   BridgedIframe,
   BridgedIframeHandle,
@@ -16,20 +17,21 @@ export const Discover = () => {
     height: 0,
   });
 
-  const { language, componentsHost } = useApp();
+  const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams } = useApp();
   const iframeRef = useRef<BridgedIframeHandle>(null);
 
-  // Calculate modal dimensions with 16:10 aspect ratio
+  const src = appendUrlParams(`${smartComponentsHost}/discover/`);
+  useEffect(() => {
+    setCurrentIframeUrl(src);
+    return () => setCurrentIframeUrl(null);
+  }, [src, setCurrentIframeUrl]);
+
   useEffect(() => {
     const calculateDimensions = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       const aspectRatio = 10 / 16;
-
-      // Check if mobile (typically < 768px width)
       const isMobile = windowWidth < 768;
-
-      // Use 10px padding on mobile, 80px on desktop
       const padding = isMobile ? 10 : 80;
       const maxWidth = windowWidth - padding * 2;
       const maxHeight = windowHeight - padding * 2;
@@ -37,7 +39,6 @@ export const Discover = () => {
       let width = maxWidth;
       let height = width / aspectRatio;
 
-      // If height exceeds available space, constrain by height instead
       if (height > maxHeight) {
         height = maxHeight;
         width = height * aspectRatio;
@@ -48,9 +49,17 @@ export const Discover = () => {
 
     calculateDimensions();
     window.addEventListener("resize", calculateDimensions);
-
     return () => window.removeEventListener("resize", calculateDimensions);
   }, []);
+
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowModal(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showModal]);
 
   const onNavigation = useCallback(async (feature: string, focus?: string) => {
     if (feature === "discover") {
@@ -66,14 +75,14 @@ export const Discover = () => {
       setModalFocus({ id: focus, type: "wearable" });
       setShowModal(true);
     }
-
     return undefined;
   }, []);
+
   return (
     <>
       <BridgedIframe
         ref={iframeRef}
-        src={`${componentsHost}/discover/?lang=${language}`}
+        src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 grow"
         onNavigation={onNavigation}
         sizeToContent
@@ -81,7 +90,7 @@ export const Discover = () => {
 
       {showModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/75 flex items-center justify-center z-50"
           onClick={() => setShowModal(false)}
         >
           <div
@@ -94,29 +103,29 @@ export const Discover = () => {
           >
             <button
               onClick={() => setShowModal(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl font-bold z-10"
+              className="absolute -top-12 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
               aria-label="Close modal"
             >
-              ✕
+              <XIcon size={18} weight="bold" aria-hidden="true" />
             </button>
 
             {modalFocus?.type === "card" && (
               <BridgedIframe
-                src={`${componentsHost}/card/?id=${modalFocus.id}&lang=${language}`}
+                src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus.id}`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
               />
             )}
             {modalFocus?.type === "reward" && (
               <BridgedIframe
-                src={`${componentsHost}/reward/?id=${modalFocus.id}&lang=${language}`}
+                src={appendUrlParams(`${smartComponentsHost}/reward/?id=${modalFocus.id}`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
               />
             )}
             {modalFocus?.type === "wearable" && (
               <BridgedIframe
-                src={`${componentsHost}/wearable/?id=${modalFocus.id}&lang=${language}`}
+                src={appendUrlParams(`${smartComponentsHost}/wearable/?id=${modalFocus.id}`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
               />

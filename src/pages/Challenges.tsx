@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { XIcon } from "@phosphor-icons/react";
 import {
   BridgedIframe,
   BridgedIframeHandle,
@@ -7,29 +8,33 @@ import { useApp } from "../context/AppContext";
 
 export const Challenges = () => {
   const [showModal, setShowModal] = useState(false);
-  const [modalFocus, setModalFocus] = useState<string>("");
+  const [modalFocus, setModalFocus] = useState<string | undefined>();
   const [modalDimensions, setModalDimensions] = useState({
     width: 0,
     height: 0,
   });
-  const { language, componentsHost } = useApp();
+  const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams } = useApp();
   const iframeRef = useRef<BridgedIframeHandle>(null);
 
-  // Calculate modal dimensions with 16:10 aspect ratio
+  const src = appendUrlParams(`${smartComponentsHost}/challenges/`);
+  useEffect(() => {
+    setCurrentIframeUrl(src);
+    return () => setCurrentIframeUrl(null);
+  }, [src, setCurrentIframeUrl]);
+
   useEffect(() => {
     const calculateDimensions = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       const aspectRatio = 10 / 16;
-
-      // Leave some padding (e.g., 80px on each side)
-      const maxWidth = windowWidth - 160;
-      const maxHeight = windowHeight - 160;
+      const isMobile = windowWidth < 768;
+      const padding = isMobile ? 10 : 80;
+      const maxWidth = windowWidth - padding * 2;
+      const maxHeight = windowHeight - padding * 2;
 
       let width = maxWidth;
       let height = width / aspectRatio;
 
-      // If height exceeds available space, constrain by height instead
       if (height > maxHeight) {
         height = maxHeight;
         width = height * aspectRatio;
@@ -40,29 +45,38 @@ export const Challenges = () => {
 
     calculateDimensions();
     window.addEventListener("resize", calculateDimensions);
-
     return () => window.removeEventListener("resize", calculateDimensions);
+  }, []);
+
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowModal(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showModal]);
+
+  const onNavigation = useCallback(async (feature: string, focus?: string) => {
+    if (feature === "engaged" && focus) {
+      setModalFocus(focus);
+      setShowModal(true);
+    }
+    return undefined;
   }, []);
 
   return (
     <>
       <BridgedIframe
         ref={iframeRef}
-        src={`${componentsHost}/challenges/?lang=${language}`}
+        src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
-        onNavigation={async (feature, focus) => {
-          console.log("on navigation", feature, focus);
-          if (feature === "engaged" && focus) {
-            setModalFocus(focus);
-            setShowModal(true);
-          }
-          return undefined;
-        }}
+        onNavigation={onNavigation}
       />
 
       {showModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/75 flex items-center justify-center z-50"
           onClick={() => setShowModal(false)}
         >
           <div
@@ -75,14 +89,14 @@ export const Challenges = () => {
           >
             <button
               onClick={() => setShowModal(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl font-bold z-10"
+              className="absolute -top-12 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
               aria-label="Close modal"
             >
-              ✕
+              <XIcon size={18} weight="bold" aria-hidden="true" />
             </button>
 
             <BridgedIframe
-              src={`${componentsHost}/card/?id=${modalFocus}&lang=${language}`}
+              src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus}`)}
               className="w-full h-full rounded-lg shadow-2xl border-0"
             />
           </div>

@@ -27,6 +27,7 @@ interface BridgedIframeProps {
   className?: string;
   useRefreshToken?: boolean;
   sizeToContent?: boolean;
+  componentConfig?: Record<string, unknown>;
   onNavigation?: (
     feature: string,
     focus?: string,
@@ -55,11 +56,25 @@ export interface BridgedIframeHandle {
 export const BridgedIframe = forwardRef<
   BridgedIframeHandle,
   BridgedIframeProps
->(({ src, className, onNavigation, useRefreshToken, sizeToContent }, ref) => {
+>(
+  ({ src, className, onNavigation, useRefreshToken, sizeToContent, componentConfig }, ref) => {
   const [iframe, setIframe] = useState<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<ParentBridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const navigate = useNavigate();
+  const onNavigationRef = useRef(onNavigation);
+  const useRefreshTokenRef = useRef(useRefreshToken);
+  const componentConfigRef = useRef(componentConfig);
+  useEffect(() => {
+    onNavigationRef.current = onNavigation;
+  }, [onNavigation]);
+  useEffect(() => {
+    useRefreshTokenRef.current = useRefreshToken;
+  }, [useRefreshToken]);
+  useEffect(() => {
+    componentConfigRef.current = componentConfig;
+  }, [componentConfig]);
 
  const getCookie = (name: string): string | null => {
   const match = document.cookie.match(
@@ -170,10 +185,14 @@ const checkOneTrustConsent = useCallback((): {
       return consentStatus;
     });
 
+    bridge.addRequestHandler("component.config.get", async () => {
+      return componentConfigRef.current ?? {};
+    });
+
     // Register session.get handler
     bridge.addRequestHandler("session.get", async () => {
       // Access token or refresh token is supported
-      if (useRefreshToken) {
+      if (useRefreshTokenRef.current) {
         const refreshToken = authService.getRefreshToken();
         console.log(
           "session.get called, returning refreshToken:",
@@ -206,8 +225,8 @@ const checkOneTrustConsent = useCallback((): {
         extra: string;
         params: Record<string, any>;
       };
-      if (onNavigation) {
-        return (await onNavigation?.(feature, focus, extra, params)) ?? {};
+      if (onNavigationRef.current) {
+        return (await onNavigationRef.current(feature, focus, extra, params)) ?? {};
       }
       if (
         feature === "ar" ||
@@ -299,7 +318,8 @@ const checkOneTrustConsent = useCallback((): {
 
     console.log("Bridge handlers registered successfully");
 
-    // Now that bridge is configured, set the iframe src
+    // Now that bridge is configured, set the iframe src (reset loaded flag first)
+    setIframeLoaded(false);
     setIframeSrc(src);
 
     // Send initial consent status once bridge is ready
@@ -313,6 +333,7 @@ const checkOneTrustConsent = useCallback((): {
       clearTimeout(consentTimer);
       if (bridge) {
         bridge.removeRequestHandler("tracking.consent.request");
+        bridge.removeRequestHandler("component.config.get");
         bridge.removeRequestHandler("session.get");
         bridge.removeRequestHandler("session.clear");
         bridge.removeRequestHandler("navigation.go");
@@ -336,13 +357,23 @@ const checkOneTrustConsent = useCallback((): {
     src,
     navigate,
     iframe,
-    onNavigation,
     sizeToContent,
     checkOneTrustConsent,
     sendConsentUpdate,
   ]);
 
-  // Expose goTo function via ref
+  useEffect(() => {
+    if (!bridgeRef.current || !iframeSrc || !iframeLoaded) {
+      return;
+    }
+
+    bridgeRef.current
+      .sendRequest("component.config.update", componentConfig ?? {})
+      .catch((error) => {
+        console.warn("component.config.update failed", error);
+      });
+  }, [componentConfig, iframeSrc, iframeLoaded]);
+
   useImperativeHandle(ref, () => ({
     goTo: async (params: {
       feature: string;
@@ -355,7 +386,7 @@ const checkOneTrustConsent = useCallback((): {
       }
       return bridgeRef.current.sendRequest("navigation.go", params);
     },
-  }));
+  }), []);
 
   return (
     <iframe
@@ -363,9 +394,11 @@ const checkOneTrustConsent = useCallback((): {
       src={iframeSrc || undefined}
       className={className}
       title="Embedded Content"
+      onLoad={() => setIframeLoaded(true)}
       allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share; xr-spatial-tracking"
     />
   );
-});
+  },
+);
 
 BridgedIframe.displayName = "BridgedIframe";

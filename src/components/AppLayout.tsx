@@ -7,8 +7,8 @@ export const AppLayout = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <div className="text-white text-xl font-semibold">Loading...</div>
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-black">
+        <div className="text-black dark:text-white text-xl font-semibold">Loading…</div>
       </div>
     );
   }
@@ -18,7 +18,7 @@ export const AppLayout = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-black">
+    <div className="min-h-screen flex flex-col bg-neutral-100 dark:bg-black">
       <AppHeader />
       <main className="flex flex-col flex-1 p-4 h-full">
         <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">

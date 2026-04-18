@@ -1,85 +1,96 @@
-import { useState, FormEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Form } from '@base-ui/react/form';
+import { Field } from '@base-ui/react/field';
+import { Button } from '@base-ui/react/button';
 import { useAuth } from '../context/AuthContext';
 
+const inputCls =
+  'w-full rounded-lg border border-black/12 dark:border-white/12 bg-transparent dark:bg-neutral-800/50 ' +
+  'px-3.5 py-2.5 text-sm text-black dark:text-white outline-none transition-[border-color,box-shadow] ' +
+  'data-[focused]:border-purple-500 data-[focused]:ring-4 data-[focused]:ring-purple-500/15 ' +
+  'data-[disabled]:opacity-50 placeholder:text-black/30 dark:placeholder:text-white/30';
+
 export const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      await login({ email, password });
-      navigate('/');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-purple-900 p-5">
-      <div className="bg-white rounded-xl shadow-2xl p-10 w-full max-w-md">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">Welcome Back</h1>
-        <p className="text-sm text-gray-600 mb-8 text-center">Sign in to your account</p>
-        
-        {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg text-sm text-center mb-5">
-            {error}
-          </div>
-        )}
-        
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div className="flex flex-col gap-2">
-            <label htmlFor="email" className="text-sm font-semibold text-gray-800">
-              Email Address
-            </label>
-            <input
-              id="email"
+    <div className="min-h-screen flex items-center justify-center bg-neutral-100 dark:bg-neutral-950 p-5">
+      <div className="w-full max-w-sm bg-white dark:bg-neutral-900 border border-black/8 dark:border-white/8 rounded-2xl shadow-sm p-8">
+        <h1 className="text-2xl font-semibold text-black dark:text-white text-center">Component Demo</h1>
+        <p className="text-sm text-black/50 dark:text-white/50 text-center mt-1 mb-6">Sign into your account</p>
+        <hr className="border-black/8 dark:border-white/8 mb-6" />
+
+        <Form
+          className="flex flex-col gap-4"
+          onFormSubmit={async ({ email, password }) => {
+            setError('');
+            setLoading(true);
+            try {
+              await login({ email, password });
+              navigate('/');
+            } catch (err) {
+              setError(err instanceof Error ? err.message : 'Login failed');
+            } finally {
+              setLoading(false);
+            }
+          }}
+        >
+          <Field.Root name="email" className="flex flex-col gap-1.5" disabled={loading}>
+            <Field.Label className="text-sm font-medium text-black/70 dark:text-white/70">
+              Email
+            </Field.Label>
+            <Field.Control
               type="email"
-              className="px-4 py-3 border-2 border-gray-200 rounded-lg text-sm transition-all outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-100"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              spellCheck={false}
+              placeholder="you@example.com"
               required
-              disabled={loading}
+              className={inputCls}
             />
-          </div>
+            <Field.Error match="valueMissing" className="text-xs text-red-500">
+              Email is required
+            </Field.Error>
+            <Field.Error match="typeMismatch" className="text-xs text-red-500">
+              Enter a valid email address
+            </Field.Error>
+          </Field.Root>
 
-          <div className="flex flex-col gap-2">
-            <label htmlFor="password" className="text-sm font-semibold text-gray-800">
+          <Field.Root name="password" className="flex flex-col gap-1.5" disabled={loading}>
+            <Field.Label className="text-sm font-medium text-black/70 dark:text-white/70">
               Password
-            </label>
-            <input
-              id="password"
+            </Field.Label>
+            <Field.Control
               type="password"
-              className="px-4 py-3 border-2 border-gray-200 rounded-lg text-sm transition-all outline-none focus:border-purple-600 focus:ring-4 focus:ring-purple-100"
-              placeholder="Enter your password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="current-password"
+              placeholder="••••••••"
               required
-              disabled={loading}
+              className={inputCls}
             />
-          </div>
+            <Field.Error match="valueMissing" className="text-xs text-red-500">
+              Password is required
+            </Field.Error>
+          </Field.Root>
 
-          <button 
-            type="submit" 
-            className="py-3.5 bg-gradient-to-r from-purple-600 to-purple-900 text-white rounded-lg text-base font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+          {error && (
+            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          )}
+
+          <Button
+            type="submit"
             disabled={loading}
+            focusableWhenDisabled
+            className="mt-1 w-full rounded-lg bg-purple-600 px-4 py-2.5 text-sm font-semibold text-white
+              transition-[background-color,opacity] hover:bg-purple-700
+              data-[disabled]:opacity-50 data-[disabled]:cursor-not-allowed
+              focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-purple-500"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
+            {loading ? 'Signing in…' : 'Sign in'}
+          </Button>
+        </Form>
       </div>
     </div>
   );

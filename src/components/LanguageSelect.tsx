@@ -18,24 +18,28 @@ const LANGUAGES = [
 ];
 
 export const LanguageSelect = () => {
-  const { language, setLanguage } = useApp();
+  const { explicitLang, setLanguage } = useApp();
 
   return (
     <Select.Root
-      value={language}
+      value={explicitLang}
       onValueChange={(value) => {
         if (value !== null) setLanguage(value);
       }}
     >
       <Select.Trigger
         aria-label="Select language"
-        className="flex h-8 min-w-16 items-center justify-center gap-1.5 rounded-full border border-black/15 bg-black/5 px-3 text-sm font-medium text-black uppercase transition-colors hover:bg-black/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black/30 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:focus-visible:outline-white/50 cursor-pointer"
+        className={`flex h-8 min-w-16 items-center justify-center gap-1.5 rounded-full border px-3 text-sm font-medium uppercase transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 cursor-pointer ${
+          explicitLang
+            ? "border-black/15 bg-black/5 text-black hover:bg-black/10 focus-visible:outline-black/30 dark:border-white/20 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 dark:focus-visible:outline-white/50"
+            : "border-black/8 bg-transparent text-black/35 hover:bg-black/5 hover:text-black/60 focus-visible:outline-black/20 dark:border-white/10 dark:text-white/30 dark:hover:bg-white/5 dark:hover:text-white/50"
+        }`}
       >
         <Select.Value>
-          {(value) => (value as string)?.toUpperCase() ?? "EN"}
+          {(value) => value ? (value as string).toUpperCase() : <span className="normal-case tracking-normal">—</span>}
         </Select.Value>
         <Select.Icon>
-          <CaretUpDownIcon size={14} weight="bold" className="text-black/40 dark:text-white/50" />
+          <CaretUpDownIcon size={14} weight="bold" className="text-black/40 dark:text-white/50" aria-hidden="true" />
         </Select.Icon>
       </Select.Trigger>
 
@@ -49,7 +53,7 @@ export const LanguageSelect = () => {
                 className="grid cursor-default grid-cols-[1rem_1fr] items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-black/60 select-none data-[highlighted]:bg-black/5 data-[highlighted]:text-black dark:text-white/70 dark:data-[highlighted]:bg-white/10 dark:data-[highlighted]:text-white outline-none"
               >
                 <Select.ItemIndicator className="col-start-1">
-                  <CheckIcon size={14} weight="bold" />
+                  <CheckIcon size={14} weight="bold" aria-hidden="true" />
                 </Select.ItemIndicator>
                 <Select.ItemText className="col-start-2">
                   {lang.label}

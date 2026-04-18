@@ -7,6 +7,7 @@ import { Main } from "./pages/Main";
 import { Challenges } from "./pages/Challenges";
 import { Discover } from "./pages/Discover";
 import { Rewards } from "./pages/Rewards";
+import { Map } from "./pages/Map";
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
               <Route path="/discover" element={<Discover />} />
               <Route path="/rewards" element={<Rewards />} />
               <Route path="/challenges" element={<Challenges />} />
+              <Route path="/map" element={<Map />} />
               <Route path="/main" element={<Main />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />

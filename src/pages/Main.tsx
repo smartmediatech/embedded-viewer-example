@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import {
   BridgedIframe,
   BridgedIframeHandle,
@@ -7,7 +7,13 @@ import { useApp } from "../context/AppContext";
 
 export const Main = () => {
   const iframeRef = useRef<BridgedIframeHandle>(null);
-  const { language, viewerHost } = useApp();
+  const { language, embeddedViewerHost, setCurrentIframeUrl } = useApp();
+
+  const src = `${embeddedViewerHost}/?lang=${language}#/discover`;
+  useEffect(() => {
+    setCurrentIframeUrl(src);
+    return () => setCurrentIframeUrl(null);
+  }, [src, setCurrentIframeUrl]);
 
   const handleGoToMap = async () => {
     try {
@@ -59,7 +65,7 @@ export const Main = () => {
       <BridgedIframe
         useRefreshToken
         ref={iframeRef}
-        src={`${viewerHost}/?lang=${language}#/discover`}
+        src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
       />
     </>
