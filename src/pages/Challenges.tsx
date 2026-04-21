@@ -13,7 +13,7 @@ export const Challenges = () => {
     width: 0,
     height: 0,
   });
-  const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams } = useApp();
+  const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams, bootMode } = useApp();
   const iframeRef = useRef<BridgedIframeHandle>(null);
 
   const src = appendUrlParams(`${smartComponentsHost}/challenges/`);
@@ -72,6 +72,7 @@ export const Challenges = () => {
         src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
         onNavigation={onNavigation}
+        useRefreshToken={bootMode === "refresh-token"}
       />
 
       {showModal && (
@@ -98,6 +99,7 @@ export const Challenges = () => {
             <BridgedIframe
               src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus}`)}
               className="w-full h-full rounded-lg shadow-2xl border-0"
+              useRefreshToken={bootMode === "refresh-token"}
             />
           </div>
         </div>

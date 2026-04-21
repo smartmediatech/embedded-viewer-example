@@ -332,6 +332,7 @@ const checkOneTrustConsent = useCallback((): {
     return () => {
       clearTimeout(consentTimer);
       if (bridge) {
+        bridge.sendRequest("session.clear", {}).catch(() => {});
         bridge.removeRequestHandler("tracking.consent.request");
         bridge.removeRequestHandler("component.config.get");
         bridge.removeRequestHandler("session.get");
@@ -358,6 +359,7 @@ const checkOneTrustConsent = useCallback((): {
     navigate,
     iframe,
     sizeToContent,
+    useRefreshToken,
     checkOneTrustConsent,
     sendConsentUpdate,
   ]);
@@ -390,6 +392,7 @@ const checkOneTrustConsent = useCallback((): {
 
   return (
     <iframe
+      key={String(useRefreshToken)}
       ref={setIframeRef}
       src={iframeSrc || undefined}
       className={className}

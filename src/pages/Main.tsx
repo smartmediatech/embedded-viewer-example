@@ -7,7 +7,7 @@ import { useApp } from "../context/AppContext";
 
 export const Main = () => {
   const iframeRef = useRef<BridgedIframeHandle>(null);
-  const { language, embeddedViewerHost, setCurrentIframeUrl } = useApp();
+  const { language, embeddedViewerHost, setCurrentIframeUrl, bootMode } = useApp();
 
   const src = `${embeddedViewerHost}/?lang=${language}#/discover`;
   useEffect(() => {
@@ -63,7 +63,7 @@ export const Main = () => {
       </div>
 
       <BridgedIframe
-        useRefreshToken
+        useRefreshToken={bootMode === "refresh-token"}
         ref={iframeRef}
         src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 flex-1"

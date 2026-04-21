@@ -5,6 +5,7 @@ This project demonstrates a **container application** that embeds **SMT Embedded
 ## Overview
 
 This example showcases:
+
 - **User Authentication**: Login flow with email/password
 - **Auth Token Passing**: Securely passing tokens to embedded components
 - **Isolated Embeddable Components**: Standalone components that can be embedded independently (Discover, Challenges, Card, Reward, AR Wearable, Map)
@@ -57,66 +58,80 @@ Additional bridge features depend on the component:
 - Use `component.config.get` and `component.config.update` for components like Map that accept host-provided configuration
 
 ### Discover Component
+
 The primary landing experience within the embedded component suite, showing challenges, rewards, and AR wearables. Supports navigation to card, reward, and AR wearable details via modals.
 
 **URL**: `https://{componentsHost}/discover/`
 
 **Component-specific notes**:
+
 - Optionally handle `navigation.go` if you want to open card, reward, or wearable details in host-controlled modals
 - Consider `sizeToContent` when embedding inline in a scrolling page
 
 ### Rewards Component
+
 Displays the user's rewards, including rewards they have acquired and can claim. Supports navigation to individual reward details, engaged cards, and AR wearables via modals.
 
 **URL**: `https://{componentsHost}/rewards/`
 
 **Component-specific notes**:
+
 - Optionally handle `navigation.go` if you want to open reward, card, or wearable details in host-controlled modals
 - Consider `sizeToContent` when embedding inline in a scrolling page
 
 ### Challenges Component
+
 Displays challenges that the user has started and their progress. Supports navigation to engaged cards via modal.
 
 **URL**: `https://{componentsHost}/challenges/`
 
 **Component-specific notes**:
+
 - Optionally handle `navigation.go` if you want to open engaged card details in a host-controlled modal
 - Consider `sizeToContent` when embedding inline in a scrolling page
 
 ### Card Component
+
 Displays detailed card information. Requires card ID as query parameter.
 
 **URL**: `https://{componentsHost}/card/?id={cardId}`
 
 **Component-specific notes**:
+
 - Include the required `id` query parameter
 - Do not use `sizeToContent` if rendering inside a fixed-size modal
 
 ### Reward Component
+
 Shows reward details and redemption options. Requires reward ID as query parameter.
 
 **URL**: `https://{componentsHost}/reward/?id={rewardId}`
 
 **Component-specific notes**:
+
 - Include the required `id` query parameter
 - Do not use `sizeToContent` if rendering inside a fixed-size modal
 
 ### AR Wearable Component
+
 Displays AR wearable items (face filters, accessories, etc.) with interactive preview and try-on functionality. Requires wearable ID as query parameter.
 
 **URL**: `https://{componentsHost}/wearable/?id={wearableId}`
 
 **Component-specific notes**:
+
 - Include the required `id` query parameter
 - Ensure the iframe `allow` attribute includes camera, gyroscope, accelerometer, and `xr-spatial-tracking`
 - Do not use `sizeToContent` if rendering inside a fixed-size modal
 
 ### Map Component
+
 Displays the standalone map component. Supports the same embedded auth/session contract as the other components and accepts a visual configuration object over the bridge.
 
 **URL**: `https://{componentsHost}/map/`
 
 **Component-specific notes**:
+
 - Support `component.config.get` to provide initial map configuration
 - Optionally send `component.config.update` for live theme/config changes
 
@@ -168,6 +183,7 @@ The iframe must have the following permissions enabled via the `allow` attribute
 ```
 
 **Key Permissions for AR Wearables:**
+
 - **`xr-spatial-tracking`**: Required for AR/XR experiences and spatial tracking
 - **`camera`**: Required for camera access to display AR overlays
 - **`gyroscope`** and **`accelerometer`**: Required for device orientation tracking
@@ -189,6 +205,7 @@ The embedded components use the following language detection priority:
 Language codes must use an **ISO 639-1 language code** with an optional **ISO 3166-1 alpha-2 regional code**, separated by a hyphen (for example, `en` or `en-US`).
 
 **Examples**:
+
 - `en` - English (generic)
 - `en-US` - English (United States)
 - `es` - Spanish (generic)
@@ -235,7 +252,7 @@ useEffect(() => {
   }
 
   const childOrigin = new URL(src);
-  
+
   const bridge = new window.SMTBaseBridge.ParentBridge(iframe, {
     origin: childOrigin.origin,
     meta: {},
@@ -281,11 +298,13 @@ useEffect(() => {
 
 ### Passing Auth to Embedded Components
 
-#### Supported Token Types
+#### Token Types
 
-The `session.get` handler supports returning **either an access token or a refresh token**:
+The `session.get` handler must return either an access token or a refresh token. **Access token mode is recommended for most integrations.**
 
-**Option 1: Return Access Token** (Recommended for isolated components)
+**Access Token (recommended)**
+
+The container manages the token lifecycle — refreshing expired access tokens and always providing a valid one to the embedded component.
 
 ```typescript
 bridge.addRequestHandler("session.get", async () => {
@@ -294,9 +313,9 @@ bridge.addRequestHandler("session.get", async () => {
 });
 ```
 
-When returning an access token, the container application manages the token refresh lifecycle. The embedded component receives a valid, ready-to-use access token.
+**Refresh Token**
 
-**Option 2: Return Refresh Token** (Required for legacy embedded viewer)
+The embedded component manages its own token lifecycle. Required for the legacy full embedded viewer; not recommended for isolated components.
 
 ```typescript
 bridge.addRequestHandler("session.get", async () => {
@@ -304,8 +323,6 @@ bridge.addRequestHandler("session.get", async () => {
   return { refreshToken };
 });
 ```
-
-When returning a refresh token, the embedded component is responsible for managing the token refresh lifecycle and obtaining access tokens as needed.
 
 ### Navigation Handling
 
@@ -364,7 +381,7 @@ The `BridgedIframe` component handles loader and alert requests from embedded co
 ```typescript
 bridge.addRequestHandler("loader.show", async ({ payload }) => {
   const { label } = payload as { label: string };
-  
+
   Swal.fire({
     title: label || "Loading...",
     allowOutsideClick: false,
@@ -375,7 +392,7 @@ bridge.addRequestHandler("loader.show", async ({ payload }) => {
       Swal.showLoading();
     },
   });
-  
+
   return {};
 });
 
@@ -400,11 +417,13 @@ The `BridgedIframe` component supports dynamic height adjustment based on the em
 #### When to Use sizeToContent
 
 Use the `sizeToContent` prop when:
+
 - The embedded component has **variable height content** that changes dynamically
 - You want the iframe to **scroll with your page** rather than having its own scrollbar
 - The content should feel like a **native part of your page** rather than a separate scrollable area
 
 **Do NOT use** `sizeToContent` when:
+
 - The component has a **fixed, known height**
 - You want the iframe to have its **own internal scrollbar**
 - The component is displayed in a **modal or fixed-size container**
@@ -431,7 +450,7 @@ bridge.addRequestHandler("frame.resize", async ({ payload }) => {
   }
 
   const { height } = payload as { height: number };
-  
+
   if (typeof height !== "number" || height < 0) {
     return new BridgeError(
       "INVALID_PARAMETER",
@@ -534,7 +553,12 @@ The `BridgedIframe` component integrates with OneTrust to manage user tracking c
 OneTrust is loaded in the HTML file:
 
 ```html
-<script src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"  type="text/javascript" charset="UTF-8" data-domain-script="<your-onetrust-key>" ></script>
+<script
+  src="https://cdn.cookielaw.org/scripttemplates/otSDKStub.js"
+  type="text/javascript"
+  charset="UTF-8"
+  data-domain-script="<your-onetrust-key>"
+></script>
 ```
 
 #### Bridge Messages for Tracking Consent
@@ -549,6 +573,7 @@ const response = await bridge.sendRequest("tracking.consent.request", {});
 ```
 
 **Response format:**
+
 - `canTrack`: `true` if user has consented to tracking (OneTrust group C0002), `false` otherwise
 - `isReady`: `true` if user has interacted with the OneTrust banner/preference center, `false` otherwise
 
@@ -557,7 +582,9 @@ const response = await bridge.sendRequest("tracking.consent.request", {});
 ```typescript
 const getCookie = (name: string): string | null => {
   const match = document.cookie.match(
-    new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`)
+    new RegExp(
+      `(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}=([^;]*)`,
+    ),
   );
   return match ? decodeURIComponent(match[1]) : null;
 };
@@ -599,6 +626,7 @@ bridgeRef.current.sendRequest("tracking.consent.update", consentStatus);
 ```
 
 This is sent:
+
 - When OneTrust consent preferences change (via `OnConsentChanged` callback)
 - 1 second after iframe initialization (to provide initial status)
 
@@ -851,11 +879,11 @@ This section contains configuration details specific to the **FIFA** tenant.
 
 ### Environment Configurations
 
-| Environment | Origin | FQDN | App ID |
-|---|---|---|---|
-| Sandbox | `https://dev-www.fifa.com` | `smt.fifasandbox` | `46fcb627-b237-4706-8175-299801d97cb5` |
-| Test | `https://ppr-www.fifa.com` | `smt.fifatest` | `4290980e-0b00-42fb-8b3e-c469af9823df` |
-| Live | `https://www.fifa.com` | `smt.fifa` | `be435e80-9b2e-4526-aa0c-070b2673aa64` |
+| Environment | Origin                     | FQDN              | App ID                                 |
+| ----------- | -------------------------- | ----------------- | -------------------------------------- |
+| Sandbox     | `https://dev-www.fifa.com` | `smt.fifasandbox` | `46fcb627-b237-4706-8175-299801d97cb5` |
+| Test        | `https://ppr-www.fifa.com` | `smt.fifatest`    | `4290980e-0b00-42fb-8b3e-c469af9823df` |
+| Live        | `https://www.fifa.com`     | `smt.fifa`        | `be435e80-9b2e-4526-aa0c-070b2673aa64` |
 
 ### Component URLs
 

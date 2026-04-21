@@ -3,7 +3,7 @@ import { BridgedIframe, BridgedIframeHandle } from "../components/BridgedIframe"
 import { useApp } from "../context/AppContext";
 
 export const Map = () => {
-  const { legacyComponentsHost, mapComponentConfig, mapQueryParams, setMapIframeHandle, setCurrentIframeUrl, appendUrlParams } = useApp();
+  const { legacyComponentsHost, mapComponentConfig, mapQueryParams, setMapIframeHandle, setCurrentIframeUrl, appendUrlParams, bootMode } = useApp();
 
   const handleRef = useCallback(
     (handle: BridgedIframeHandle | null) => {
@@ -29,11 +29,11 @@ export const Map = () => {
   return (
     <>
       <BridgedIframe
-        useRefreshToken
         ref={handleRef}
         src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 grow"
         componentConfig={mapComponentConfig}
+        useRefreshToken={bootMode === "refresh-token"}
       />
     </>
   );

@@ -11,6 +11,14 @@ module.exports = [
   },
   js.configs.recommended,
   {
+    files: ["*.config.js", "*.config.cjs"],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+    },
+  },
+  {
     files: ["src/**/*.{ts,tsx}"],
     languageOptions: {
       parser: tsParser,
@@ -25,6 +33,7 @@ module.exports = [
       globals: {
         ...globals.browser,
         ...globals.es2021,
+        process: "readonly",
       },
     },
     plugins: {

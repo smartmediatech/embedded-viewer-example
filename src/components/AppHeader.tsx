@@ -1,10 +1,12 @@
 import { useState, type ComponentType } from "react";
-import { GearIcon, XIcon, SunIcon, MoonIcon, UserCircleIcon } from "@phosphor-icons/react";
+import { GearIcon, XIcon, SunIcon, MoonIcon, UserCircleIcon, BracketsAngleIcon } from "@phosphor-icons/react";
 import { Popover } from "@base-ui/react/popover";
 import { Tabs } from "@base-ui/react/tabs";
+import { ToggleGroup } from "@base-ui/react/toggle-group";
+import { Toggle } from "@base-ui/react/toggle";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { useApp } from "../context/AppContext";
+import { useApp, type BootMode } from "../context/AppContext";
 import { LanguageSelect } from "./LanguageSelect";
 import { TenantSelect } from "./TenantSelect";
 import { MapSettings } from "./MapSettings";
@@ -20,7 +22,7 @@ const COMPONENT_TABS: { path: string; label: string; Settings: ComponentType | n
 export const AppHeader = () => {
   const [loading, setLoading] = useState(false);
   const { user, logout } = useAuth();
-  const { theme, setTheme, explicitTheme, language } = useApp();
+  const { theme, setTheme, explicitTheme, language, bootMode, setBootMode } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -109,6 +111,52 @@ export const AppHeader = () => {
           >
             {theme === "dark" ? <SunIcon size={18} aria-hidden="true" /> : <MoonIcon size={18} aria-hidden="true" />}
           </button>
+
+          {/* Dev menu */}
+          <Popover.Root>
+            <Popover.Trigger
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full text-black/50 transition-colors hover:bg-black/5 hover:text-black dark:text-white/60 dark:hover:bg-white/10 dark:hover:text-white cursor-pointer data-[popup-open]:bg-black data-[popup-open]:text-white dark:data-[popup-open]:bg-white dark:data-[popup-open]:text-black"
+              aria-label="Dev menu"
+            >
+              <BracketsAngleIcon size={18} weight="bold" aria-hidden="true" />
+            </Popover.Trigger>
+
+            <Popover.Portal>
+              <Popover.Positioner side="bottom" align="end" sideOffset={12} className="z-50">
+                <Popover.Popup className="w-auto min-w-56 rounded-2xl border border-black/10 bg-white/95 p-5 shadow-2xl shadow-black/10 backdrop-blur origin-[var(--transform-origin)] transition-[transform,scale,opacity] data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0 dark:border-white/10 dark:bg-neutral-950/95 dark:shadow-black/40">
+                  <Popover.Title className="text-base font-semibold text-black dark:text-white">
+                    Dev
+                  </Popover.Title>
+
+                  <div className="mt-4 space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-black/50 dark:text-white/50 mb-1.5">Boot mode</label>
+                      <ToggleGroup
+                        value={[bootMode]}
+                        onValueChange={(value) => {
+                          if (value.length > 0) setBootMode(value[0] as BootMode);
+                        }}
+                        className="flex gap-1"
+                      >
+                        <Toggle
+                          value="access-token"
+                          className="flex-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10 data-[pressed]:bg-black data-[pressed]:text-white dark:data-[pressed]:bg-white dark:data-[pressed]:text-black"
+                        >
+                          Access Token
+                        </Toggle>
+                        <Toggle
+                          value="refresh-token"
+                          className="flex-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10 data-[pressed]:bg-black data-[pressed]:text-white dark:data-[pressed]:bg-white dark:data-[pressed]:text-black"
+                        >
+                          Refresh Token
+                        </Toggle>
+                      </ToggleGroup>
+                    </div>
+                  </div>
+                </Popover.Popup>
+              </Popover.Positioner>
+            </Popover.Portal>
+          </Popover.Root>
 
           {/* Avatar / account menu */}
           <Popover.Root>

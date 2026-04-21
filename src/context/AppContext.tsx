@@ -8,19 +8,19 @@ import {
 } from "react";
 import type { BridgedIframeHandle } from "../components/BridgedIframe";
 
-export type Tenant = "fifasandbox" | "autotest";
+export type Tenant = "fifasandboxsmt" | "fifasandbox" | "localhost";
 
 export type TenantConfig = {
   label: string;
   disabled?: boolean;
   smartComponentsHost: string;
   legacyComponentsHost: string;
-  embeddedViewerHost: string;
+  embeddedViewerHost?: string;
 };
 
 export const TENANTS: Record<Tenant, TenantConfig> = {
-  fifasandbox: {
-    label: "FIFA (Sandbox)",
+  fifasandboxsmt: {
+    label: "FIFA (Sandbox) - SMT",
     smartComponentsHost:
       "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev",
     legacyComponentsHost:
@@ -28,21 +28,18 @@ export const TENANTS: Record<Tenant, TenantConfig> = {
     embeddedViewerHost:
       "https://embedded.smartmedialabs.io/fifasandbox.beta",
   },
-  autotest: {
-    label: "Autotest",
-    disabled: true,
-    smartComponentsHost:
-      "https://embedded.smartmedialabs.io/autotest/components",
-    legacyComponentsHost:
-      "https://embedded.smartmedialabs.io/autotest/components",
-    embeddedViewerHost:
-      "https://embedded.smartmedialabs.io/autotest",
+  fifasandbox: {
+    label: "FIFA (Sandbox)",
+    smartComponentsHost: "https://embedded.smtwallet.app/fifa/sandbox/components",
+    legacyComponentsHost: "https://embedded.smtwallet.app/fifa/sandbox/components",
   },
+  localhost: {
+    label: "Localhost (for development)",
+    smartComponentsHost: "http://localhost:3001",
+    legacyComponentsHost: "https://localhost:1234/components",
+    embeddedViewerHost: "http://localhost:1234",
+  }
 };
-
-// const SMART_COMPONENTS_HOST = "https://localhost:3001";
-// const LEGACY_COMPONENTS_HOST = "https://localhost:1234/components";
-// const EMBEDDED_VIEWER_HOST = "https://localhost:1234";
 
 export type MapComponentConfig = {
   theme?: {
@@ -89,6 +86,8 @@ export type MapQueryParams = {
   zoom?: number;
 };
 
+export type BootMode = "access-token" | "refresh-token";
+
 interface AppContextType {
   language: string;
   setLanguage: (language: string) => void;
@@ -96,9 +95,11 @@ interface AppContextType {
   setTheme: (theme: Theme) => void;
   tenant: Tenant;
   setTenant: (tenant: Tenant) => void;
+  bootMode: BootMode;
+  setBootMode: (mode: BootMode) => void;
   smartComponentsHost: string;
   legacyComponentsHost: string;
-  embeddedViewerHost: string;
+  embeddedViewerHost?: string;
   mapComponentConfig: MapComponentConfig;
   mapQueryParams: MapQueryParams;
   setMapQueryParams: (params: MapQueryParams) => void;
@@ -130,7 +131,10 @@ interface AppProviderProps {
 export const AppProvider = ({ children }: AppProviderProps) => {
   const [language, setLanguageState] = useState("en");
   const [theme, setThemeState] = useState<Theme>("dark");
-  const [tenant, setTenant] = useState<Tenant>("fifasandbox");
+  const [tenant, setTenant] = useState<Tenant>(
+    process.env.NODE_ENV === "production" ? "fifasandboxsmt" : "localhost"
+  );
+  const [bootMode, setBootMode] = useState<BootMode>("access-token");
   const [explicitLang, setExplicitLang] = useState<string | null>(null);
   const [explicitTheme, setExplicitTheme] = useState<Theme | null>(null);
   const [mapQueryParams, setMapQueryParams] = useState<MapQueryParams>({});
@@ -176,6 +180,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     setTheme,
     tenant,
     setTenant,
+    bootMode,
+    setBootMode,
     smartComponentsHost: TENANTS[tenant].smartComponentsHost,
     legacyComponentsHost: TENANTS[tenant].legacyComponentsHost,
     embeddedViewerHost: TENANTS[tenant].embeddedViewerHost,

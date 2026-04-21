@@ -28,7 +28,9 @@ export const TenantSelect = () => {
       <Select.Portal>
         <Select.Positioner side="bottom" align="start" sideOffset={4} className="z-50">
           <Select.Popup className="rounded-xl border border-black/10 bg-white/95 p-1 shadow-2xl shadow-black/10 backdrop-blur dark:border-white/10 dark:bg-neutral-950/95 dark:shadow-black/40 origin-[var(--transform-origin)] transition-[transform,scale,opacity] data-[starting-style]:scale-95 data-[starting-style]:opacity-0 data-[ending-style]:scale-95 data-[ending-style]:opacity-0">
-            {(Object.entries(TENANTS) as [Tenant, (typeof TENANTS)[Tenant]][]).map(([key, config]) => (
+            {(Object.entries(TENANTS) as [Tenant, (typeof TENANTS)[Tenant]][])
+              .filter(([key]) => process.env.NODE_ENV !== "production" || key !== "localhost")
+              .map(([key, config]) => (
               <Select.Item
                 key={key}
                 value={key}
