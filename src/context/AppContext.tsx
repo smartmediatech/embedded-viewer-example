@@ -35,9 +35,9 @@ export const TENANTS: Record<Tenant, TenantConfig> = {
   },
   localhost: {
     label: "Localhost (for development)",
-    smartComponentsHost: "http://localhost:3001",
+    smartComponentsHost: "https://localhost:3001",
     legacyComponentsHost: "https://localhost:1234/components",
-    embeddedViewerHost: "http://localhost:1234",
+    embeddedViewerHost: "https://localhost:1234",
   }
 };
 
