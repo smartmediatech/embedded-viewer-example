@@ -30,7 +30,7 @@ export const Login = () => {
             setError('');
             setLoading(true);
             try {
-              await login({ email, password });
+              await login({ email: (email as string).trim(), password });
               navigate('/');
             } catch (err) {
               setError(err instanceof Error ? err.message : 'Login failed');
