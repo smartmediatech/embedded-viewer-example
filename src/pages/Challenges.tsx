@@ -65,6 +65,15 @@ export const Challenges = () => {
     return undefined;
   }, []);
 
+  const onModalNavigation = useCallback(async (feature: string, focus?: string) => {
+    if (feature === "engaged" && focus) {
+      setModalFocus(focus);
+    } else {
+      setShowModal(false);
+    }
+    return undefined;
+  }, []);
+
   return (
     <>
       <BridgedIframe
@@ -99,6 +108,7 @@ export const Challenges = () => {
             <BridgedIframe
               src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus}`)}
               className="w-full h-full rounded-lg shadow-2xl border-0"
+              onNavigation={onModalNavigation}
               useRefreshToken={bootMode === "refresh-token"}
             />
           </div>
