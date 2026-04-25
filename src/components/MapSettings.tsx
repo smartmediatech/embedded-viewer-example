@@ -45,11 +45,15 @@ export const MapSettings = () => {
     const parsedLat = parseFloat(lat);
     const parsedLon = parseFloat(lon);
     if (isNaN(parsedLat) || isNaN(parsedLon)) return;
-    const params: Record<string, number> = { lat: parsedLat, lon: parsedLon };
     const parsedZoom = parseFloat(zoom);
-    if (!isNaN(parsedZoom)) params.zoom = parsedZoom;
     try {
-      await mapIframeHandle?.goTo({ feature: "map", params });
+      await mapIframeHandle?.request("map.viewport.set", {
+        center: {
+          latitude: parsedLat,
+          longitude: parsedLon,
+        },
+        ...(!isNaN(parsedZoom) ? { zoom: parsedZoom } : {}),
+      });
     } catch (error) {
       console.error("Go to location failed:", error);
     }
@@ -57,7 +61,7 @@ export const MapSettings = () => {
 
   const handleGoToUserLocation = useCallback(async () => {
     try {
-      await mapIframeHandle?.goTo({ feature: "map", params: { userLocation: true } });
+      await mapIframeHandle?.request("map.userLocation.focus", {});
     } catch (error) {
       console.error("Go to user location failed:", error);
     }

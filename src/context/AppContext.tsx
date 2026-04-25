@@ -86,6 +86,20 @@ export type MapQueryParams = {
   zoom?: number;
 };
 
+export type PendingMapCommand =
+  | {
+      type: "viewport";
+      center: {
+        latitude: number;
+        longitude: number;
+      };
+      zoom?: number;
+    }
+  | {
+      type: "user-location";
+      zoom?: number;
+    };
+
 export type BootMode = "access-token" | "refresh-token";
 
 interface AppContextType {
@@ -105,6 +119,9 @@ interface AppContextType {
   mapComponentConfig: MapComponentConfig;
   mapQueryParams: MapQueryParams;
   setMapQueryParams: (params: MapQueryParams) => void;
+  pendingMapCommand: PendingMapCommand | null;
+  setPendingMapCommand: (command: PendingMapCommand | null) => void;
+  clearPendingMapCommand: () => void;
   mapIframeHandle: BridgedIframeHandle | null;
   setMapIframeHandle: (handle: BridgedIframeHandle | null) => void;
   currentIframeUrl: string | null;
@@ -141,6 +158,15 @@ export const AppProvider = ({ children }: AppProviderProps) => {
   const [explicitLang, setExplicitLang] = useState<string | null>(null);
   const [explicitTheme, setExplicitTheme] = useState<Theme | null>(null);
   const [mapQueryParams, setMapQueryParams] = useState<MapQueryParams>({});
+  const [pendingMapCommand, setPendingMapCommandState] =
+    useState<PendingMapCommand | null>(null);
+
+  const setPendingMapCommand = useCallback((command: PendingMapCommand | null) => {
+    setPendingMapCommandState(command);
+  }, []);
+  const clearPendingMapCommand = useCallback(() => {
+    setPendingMapCommandState(null);
+  }, []);
   const [mapIframeHandle, setMapIframeHandle] =
     useState<BridgedIframeHandle | null>(null);
   const [currentIframeUrl, setCurrentIframeUrl] = useState<string | null>(null);
@@ -195,6 +221,9 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     mapComponentConfig: MAP_THEMES[theme],
     mapQueryParams,
     setMapQueryParams,
+    pendingMapCommand,
+    setPendingMapCommand,
+    clearPendingMapCommand,
     mapIframeHandle,
     setMapIframeHandle,
     currentIframeUrl,

@@ -3,7 +3,18 @@ import { BridgedIframe, BridgedIframeHandle } from "../components/BridgedIframe"
 import { useApp } from "../context/AppContext";
 
 export const Map = () => {
-  const { legacyComponentsHost, mapComponentConfig, mapQueryParams, setMapIframeHandle, setCurrentIframeUrl, appendUrlParams, bootMode } = useApp();
+  const {
+    legacyComponentsHost,
+    mapComponentConfig,
+    mapQueryParams,
+    pendingMapCommand,
+    clearPendingMapCommand,
+    mapIframeHandle,
+    setMapIframeHandle,
+    setCurrentIframeUrl,
+    appendUrlParams,
+    bootMode,
+  } = useApp();
 
   const handleRef = useCallback(
     (handle: BridgedIframeHandle | null) => {
@@ -25,6 +36,42 @@ export const Map = () => {
   useEffect(() => {
     return () => setMapIframeHandle(null);
   }, [setMapIframeHandle]);
+
+  useEffect(() => {
+    if (!pendingMapCommand || !mapIframeHandle) {
+      return;
+    }
+
+    // Commands are queued briefly when the host navigates to /map before the iframe bridge is ready.
+    let cancelled = false;
+
+    const sendPendingMapCommand = async () => {
+      try {
+        if (pendingMapCommand.type === "viewport") {
+          await mapIframeHandle.request("map.viewport.set", {
+            center: pendingMapCommand.center,
+            ...(pendingMapCommand.zoom != null ? { zoom: pendingMapCommand.zoom } : {}),
+          });
+        } else {
+          await mapIframeHandle.request("map.userLocation.focus", {
+            ...(pendingMapCommand.zoom != null ? { zoom: pendingMapCommand.zoom } : {}),
+          });
+        }
+      } catch (error) {
+        console.error("Sending pending map command failed:", error);
+      } finally {
+        if (!cancelled) {
+          clearPendingMapCommand();
+        }
+      }
+    };
+
+    void sendPendingMapCommand();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pendingMapCommand, clearPendingMapCommand, mapIframeHandle]);
 
   return (
     <>
