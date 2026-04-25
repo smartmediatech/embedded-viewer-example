@@ -213,7 +213,7 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
     // Core bridge handlers expose shared host capabilities to every component.
     bridge.addRequestHandler("tracking.consent.request", async () => {
       const consentStatus = checkOneTrustConsent();
-      console.log("tracking.consent.request called, returning:", consentStatus);
+      console.log("[ComponentBridge] 'tracking.consent.request' called, returning:", consentStatus);
       return consentStatus;
     });
 
@@ -228,7 +228,7 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
       if (useRefreshTokenRef.current) {
         const refreshToken = authService.getRefreshToken();
         console.log(
-          "session.get called, returning refreshToken:",
+          "[ComponentBridge] 'session.get' called, returning refreshToken:",
           refreshToken ? "present" : "null",
         );
         return { refreshToken };
@@ -236,7 +236,7 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
         //If returning Access token, you are expected to manage the refresh token life cycle
         const accessToken = await authService.getAccessToken();
         console.log(
-          "session.get called, returning accessToken:",
+          "[ComponentBridge] 'session.get' called, returning accessToken:",
           accessToken ? "present" : "null",
         );
         return { accessToken };
@@ -245,14 +245,14 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
 
     // Embedded logout is routed back through the host app.
     bridge.addRequestHandler("session.clear", async () => {
-      console.log("session.clear called");
+      console.log("[ComponentBridge] 'session.clear' called");
       await authService.logout();
       navigate("/login");
       return {};
     });
 
     bridge.addRequestHandler("navigation.go", async ({ payload }) => {
-      console.log("navigation.go to map with params:", payload);
+      console.log("[ComponentBridge] 'navigation.go' called with params:", payload);
       const { feature, focus, extra, params } = payload as {
         feature: string;
         focus: string;
@@ -357,6 +357,7 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
     });
 
     bridge.addRequestHandler("navigation.open", async ({ payload }) => {
+      console.log("[ComponentBridge] 'navigation.open' called with params:", payload);
       const { url } = payload ?? {};
       window.open(url, "_blank");
       return {};
