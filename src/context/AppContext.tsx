@@ -97,6 +97,8 @@ interface AppContextType {
   setTenant: (tenant: Tenant) => void;
   bootMode: BootMode;
   setBootMode: (mode: BootMode) => void;
+  suppressReferrer: boolean;
+  setSuppressReferrer: (suppress: boolean) => void;
   smartComponentsHost: string;
   legacyComponentsHost: string;
   embeddedViewerHost?: string;
@@ -135,6 +137,7 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     process.env.NODE_ENV === "production" ? "fifasandboxsmt" : "localhost"
   );
   const [bootMode, setBootMode] = useState<BootMode>("access-token");
+  const [suppressReferrer, setSuppressReferrer] = useState(false);
   const [explicitLang, setExplicitLang] = useState<string | null>(null);
   const [explicitTheme, setExplicitTheme] = useState<Theme | null>(null);
   const [mapQueryParams, setMapQueryParams] = useState<MapQueryParams>({});
@@ -182,6 +185,8 @@ export const AppProvider = ({ children }: AppProviderProps) => {
     setTenant,
     bootMode,
     setBootMode,
+    suppressReferrer,
+    setSuppressReferrer,
     smartComponentsHost: TENANTS[tenant].smartComponentsHost,
     legacyComponentsHost: TENANTS[tenant].legacyComponentsHost,
     embeddedViewerHost: TENANTS[tenant].embeddedViewerHost,

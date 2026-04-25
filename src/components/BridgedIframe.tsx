@@ -7,6 +7,7 @@ import {
   useCallback,
 } from "react";
 import { useNavigate } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 import { authService } from "../services/authService";
 import ParentBridge from "@/types/smt-base-bridge/parent-bridge";
 import Swal from "sweetalert2";
@@ -58,6 +59,7 @@ export const BridgedIframe = forwardRef<
   BridgedIframeProps
 >(
   ({ src, className, onNavigation, useRefreshToken, sizeToContent, componentConfig }, ref) => {
+  const { suppressReferrer } = useApp();
   const [iframe, setIframe] = useState<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<ParentBridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
@@ -392,13 +394,14 @@ const checkOneTrustConsent = useCallback((): {
 
   return (
     <iframe
-      key={String(useRefreshToken)}
+      key={`${String(useRefreshToken)}-${String(suppressReferrer)}`}
       ref={setIframeRef}
       src={iframeSrc || undefined}
       className={className}
       title="Embedded Content"
       onLoad={() => setIframeLoaded(true)}
       allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share; xr-spatial-tracking"
+      referrerPolicy={suppressReferrer ? "no-referrer" : undefined}
     />
   );
   },

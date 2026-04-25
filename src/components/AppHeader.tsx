@@ -22,7 +22,7 @@ const COMPONENT_TABS: { path: string; label: string; Settings: ComponentType | n
 export const AppHeader = () => {
   const [loading, setLoading] = useState(false);
   const { user, logout } = useAuth();
-  const { theme, setTheme, explicitTheme, language, bootMode, setBootMode } = useApp();
+  const { theme, setTheme, explicitTheme, language, bootMode, setBootMode, suppressReferrer, setSuppressReferrer } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -149,6 +149,29 @@ export const AppHeader = () => {
                           className="flex-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10 data-[pressed]:bg-black data-[pressed]:text-white dark:data-[pressed]:bg-white dark:data-[pressed]:text-black"
                         >
                           Refresh Token
+                        </Toggle>
+                      </ToggleGroup>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-black/50 dark:text-white/50 mb-1.5">Referrer</label>
+                      <ToggleGroup
+                        value={[suppressReferrer ? "none" : "send"]}
+                        onValueChange={(value) => {
+                          if (value.length > 0) setSuppressReferrer(value[0] === "none");
+                        }}
+                        className="flex gap-1"
+                      >
+                        <Toggle
+                          value="send"
+                          className="flex-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10 data-[pressed]:bg-black data-[pressed]:text-white dark:data-[pressed]:bg-white dark:data-[pressed]:text-black"
+                        >
+                          Send
+                        </Toggle>
+                        <Toggle
+                          value="none"
+                          className="flex-1 whitespace-nowrap px-3 py-1.5 rounded-full text-xs font-medium transition-colors cursor-pointer text-black/60 hover:bg-black/5 dark:text-white/60 dark:hover:bg-white/10 data-[pressed]:bg-black data-[pressed]:text-white dark:data-[pressed]:bg-white dark:data-[pressed]:text-black"
+                        >
+                          No Referrer
                         </Toggle>
                       </ToggleGroup>
                     </div>
