@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { XIcon } from "@phosphor-icons/react";
 import {
   BridgedIframe,
@@ -19,6 +20,7 @@ export const Discover = () => {
 
   const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams, bootMode } = useApp();
   const iframeRef = useRef<BridgedIframeHandle>(null);
+  const navigate = useNavigate();
 
   const src = appendUrlParams(`${smartComponentsHost}/discover/`);
   useEffect(() => {
@@ -65,6 +67,10 @@ export const Discover = () => {
     if (feature === "discover") {
       setModalFocus(undefined);
       setShowModal(false);
+    } else if (feature === "challenges") {
+      navigate("/challenges");
+    } else if (feature === "rewards") {
+      navigate("/rewards");
     } else if (feature === "engaged" && focus) {
       setModalFocus({ id: focus, type: "card" });
       setShowModal(true);
@@ -76,7 +82,7 @@ export const Discover = () => {
       setShowModal(true);
     }
     return undefined;
-  }, []);
+  }, [navigate]);
 
   return (
     <>
