@@ -217,6 +217,13 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
       return consentStatus;
     });
 
+    // Receive analytics events from the embedded component and log them.
+    bridge.addRequestHandler("tracking.event", async ({ payload }) => {
+      const { event, details } = payload as { event: string; details: Record<string, unknown> };
+      console.log("[ComponentBridge] tracking.event:", event, details);
+      return {};
+    });
+
     // Components can pull their initial host-owned config on startup.
     bridge.addRequestHandler("component.config.get", async () => {
       return componentConfigRef.current ?? {};
@@ -450,6 +457,7 @@ const isBridgeErrorCode = (error: unknown, code: string): error is { code: strin
       if (bridge) {
         bridge.sendRequest("session.clear", {}).catch(() => {});
         bridge.removeRequestHandler("tracking.consent.request");
+        bridge.removeRequestHandler("tracking.event");
         bridge.removeRequestHandler("component.config.get");
         bridge.removeRequestHandler("session.get");
         bridge.removeRequestHandler("session.clear");
