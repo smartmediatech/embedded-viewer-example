@@ -106,7 +106,7 @@ export const Challenges = () => {
             </button>
 
             <BridgedIframe
-              src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus}`)}
+              src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus}&origin=challenges`)}
               className="w-full h-full rounded-lg shadow-2xl border-0"
               onNavigation={onModalNavigation}
               useRefreshToken={bootMode === "refresh-token"}

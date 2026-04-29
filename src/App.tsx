@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { AppProvider } from "./context/AppContext";
@@ -10,6 +11,15 @@ import { Rewards } from "./pages/Rewards";
 import { Map } from "./pages/Map";
 
 function App() {
+  useEffect(() => {
+    const handler = (event: MessageEvent) => {
+      if (event.data?.type === "REWARDS_EVENT") {
+        console.log("[REWARDS_EVENT]", event.data.event, event.data.details);
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, []);
   return (
     <HashRouter>
       <AuthProvider>

@@ -112,7 +112,7 @@ export const Rewards = () => {
 
             {modalFocus?.type === "card" && (
               <BridgedIframe
-                src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus.id}`)}
+                src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus.id}&origin=rewards`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
                 useRefreshToken={bootMode === "refresh-token"}
@@ -120,7 +120,7 @@ export const Rewards = () => {
             )}
             {modalFocus?.type === "reward" && (
               <BridgedIframe
-                src={appendUrlParams(`${smartComponentsHost}/reward/?id=${modalFocus.id}`)}
+                src={appendUrlParams(`${smartComponentsHost}/reward/?id=${modalFocus.id}&origin=rewards`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
                 useRefreshToken={bootMode === "refresh-token"}
@@ -128,7 +128,7 @@ export const Rewards = () => {
             )}
             {modalFocus?.type === "wearable" && (
               <BridgedIframe
-                src={appendUrlParams(`${smartComponentsHost}/wearable/?id=${modalFocus.id}`)}
+                src={appendUrlParams(`${smartComponentsHost}/wearable/?id=${modalFocus.id}&origin=rewards`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
                 useRefreshToken={bootMode === "refresh-token"}
