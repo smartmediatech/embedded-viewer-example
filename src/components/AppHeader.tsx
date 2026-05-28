@@ -15,6 +15,7 @@ import { ComponentSettings } from "./ComponentSettings";
 const COMPONENT_TABS: { path: string; label: string; Settings: ComponentType | null }[] = [
   { path: "/discover", label: "Discover", Settings: ComponentSettings },
   { path: "/rewards", label: "Rewards", Settings: ComponentSettings },
+  { path: "/giveaways", label: "Giveaways", Settings: ComponentSettings },
   { path: "/challenges", label: "Challenges", Settings: ComponentSettings },
   { path: "/map", label: "Map", Settings: MapSettings },
 ];
