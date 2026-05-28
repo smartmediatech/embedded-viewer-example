@@ -9,6 +9,8 @@
     "lint": "eslint src --ext .ts,.tsx"
   },
   "dependencies": {
+    "@base-ui/react": "^1.4.0",
+    "@phosphor-icons/react": "^2.1.10",
     "jwt-decode": "^4.0.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -23,6 +25,7 @@
     "@typescript-eslint/eslint-plugin": "^8.46.3",
     "@typescript-eslint/parser": "^8.46.3",
     "autoprefixer": "^10.4.20",
+    "baseline-browser-mapping": "^2.10.16",
     "css-loader": "^7.1.2",
     "eslint": "^9.39.1",
     "eslint-plugin-react": "^7.37.5",

@@ -1,56 +1,40 @@
-import { useState, useRef, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { XIcon } from "@phosphor-icons/react";
 import {
   BridgedIframe,
   BridgedIframeHandle,
 } from "../components/BridgedIframe";
-
-const host = "https://embedded.smartmedialabs.io/fifasandbox.beta/components/dev";
+import { useApp } from "../context/AppContext";
 
 export const Challenges = () => {
-  const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
-  const [modalFocus, setModalFocus] = useState<string>("");
+  const [modalFocus, setModalFocus] = useState<string | undefined>();
   const [modalDimensions, setModalDimensions] = useState({
     width: 0,
     height: 0,
   });
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams, bootMode } = useApp();
   const iframeRef = useRef<BridgedIframeHandle>(null);
 
-  const handleLogout = async () => {
-    setLoading(true);
-    try {
-      await logout();
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout failed:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const src = appendUrlParams(`${smartComponentsHost}/challenges/`);
+  useEffect(() => {
+    setCurrentIframeUrl(src);
+    return () => setCurrentIframeUrl(null);
+  }, [src, setCurrentIframeUrl]);
 
-  const handleGoToMain = () => {
-    navigate("/");
-  };
-
-  // Calculate modal dimensions with 16:10 aspect ratio
   useEffect(() => {
     const calculateDimensions = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
       const aspectRatio = 10 / 16;
-
-      // Leave some padding (e.g., 80px on each side)
-      const maxWidth = windowWidth - 160;
-      const maxHeight = windowHeight - 160;
+      const isMobile = windowWidth < 768;
+      const padding = isMobile ? 10 : 80;
+      const maxWidth = windowWidth - padding * 2;
+      const maxHeight = windowHeight - padding * 2;
 
       let width = maxWidth;
       let height = width / aspectRatio;
 
-      // If height exceeds available space, constrain by height instead
       if (height > maxHeight) {
         height = maxHeight;
         width = height * aspectRatio;
@@ -61,64 +45,48 @@ export const Challenges = () => {
 
     calculateDimensions();
     window.addEventListener("resize", calculateDimensions);
-
     return () => window.removeEventListener("resize", calculateDimensions);
   }, []);
 
+  useEffect(() => {
+    if (!showModal) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowModal(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [showModal]);
+
+  const onNavigation = useCallback(async (feature: string, focus?: string) => {
+    if (feature === "engaged" && focus) {
+      setModalFocus(focus);
+      setShowModal(true);
+    }
+    return undefined;
+  }, []);
+
+  const onModalNavigation = useCallback(async (feature: string, focus?: string) => {
+    if (feature === "engaged" && focus) {
+      setModalFocus(focus);
+    } else {
+      setShowModal(false);
+    }
+    return undefined;
+  }, []);
+
   return (
-    <div className="min-h-screen flex flex-col bg-black">
-      {/* Header */}
-      <header className="bg-black shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-white">
-                {user?.name}
-              </span>
-              <span className="text-xs text-white">{user?.email}</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleGoToMain}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-blue-500/40"
-            >
-              Go to Main
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-900 text-white rounded-lg text-sm font-semibold cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-lg hover:shadow-purple-500/40 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
-              disabled={loading}
-            >
-              {loading ? "Logging out..." : "Logout"}
-            </button>
-          </div>
-        </div>
-      </header>
+    <>
+      <BridgedIframe
+        ref={iframeRef}
+        src={src}
+        className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
+        onNavigation={onNavigation}
+        useRefreshToken={bootMode === "refresh-token"}
+      />
 
-      {/* Main Content - Iframe */}
-      <main className="flex flex-col flex-1 p-4 h-full">
-        <div className="flex flex-col flex-1 w-full max-w-7xl mx-auto h-full">
-          <BridgedIframe
-            ref={iframeRef}
-            src={`${host}/challenges/`}
-            className="w-full h-full rounded-lg shadow-lg border-0 flex-1"
-            onNavigation={async (feature, focus) => {
-              console.log("on navigation", feature, focus);
-              if (feature === "engaged" && focus) {
-                setModalFocus(focus);
-                setShowModal(true);
-              }
-              return undefined;
-            }}
-          />
-        </div>
-      </main>
-
-      {/* Full-screen Modal */}
       {showModal && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          className="fixed inset-0 bg-black/75 flex items-center justify-center z-50"
           onClick={() => setShowModal(false)}
         >
           <div
@@ -129,23 +97,23 @@ export const Challenges = () => {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Close button */}
             <button
               onClick={() => setShowModal(false)}
-              className="absolute -top-12 right-0 text-white hover:text-gray-300 text-2xl font-bold z-10"
+              className="absolute -top-12 right-0 inline-flex h-9 w-9 items-center justify-center rounded-full text-white/70 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
               aria-label="Close modal"
             >
-              ✕
+              <XIcon size={18} weight="bold" aria-hidden="true" />
             </button>
 
-            {/* BridgedIframe in modal */}
             <BridgedIframe
-              src={`${host}/card/?id=${modalFocus}`}
+              src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus}&origin=challenges`)}
               className="w-full h-full rounded-lg shadow-2xl border-0"
+              onNavigation={onModalNavigation}
+              useRefreshToken={bootMode === "refresh-token"}
             />
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };

@@ -9,7 +9,7 @@ import {
 import checkJwtToken from "./checkJwtExpiration";
 
 const API_BASE_URL = "https://b.smartmedialabs.io";
-const APP_ID = "46fcb627-b237-4706-8175-299801d97cb5";
+export const APP_ID = "46fcb627-b237-4706-8175-299801d97cb5";
 
 // Authentication service
 class AuthService {
@@ -202,7 +202,7 @@ class AuthService {
       // Access token is invalid or expired, refresh it
       try {
         accessToken = await this.refreshAccessToken();
-      } catch (error) {
+      } catch {
         throw new Error("Failed to refresh access token. Please login again.");
       }
     }

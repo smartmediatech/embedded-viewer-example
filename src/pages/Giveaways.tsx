@@ -6,7 +6,7 @@ import {
 } from "../components/BridgedIframe";
 import { useApp } from "../context/AppContext";
 
-export const Rewards = () => {
+export const Giveaways = () => {
   const [showModal, setShowModal] = useState(false);
   const [modalFocus, setModalFocus] = useState<{
     id: string;
@@ -20,7 +20,7 @@ export const Rewards = () => {
   const { smartComponentsHost, setCurrentIframeUrl, appendUrlParams, bootMode } = useApp();
   const iframeRef = useRef<BridgedIframeHandle>(null);
 
-  const src = appendUrlParams(`${smartComponentsHost}/rewards/`);
+  const src = appendUrlParams(`${smartComponentsHost}/giveaways/`);
   useEffect(() => {
     setCurrentIframeUrl(src);
     return () => setCurrentIframeUrl(null);
@@ -112,7 +112,7 @@ export const Rewards = () => {
 
             {modalFocus?.type === "card" && (
               <BridgedIframe
-                src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus.id}&origin=rewards`)}
+                src={appendUrlParams(`${smartComponentsHost}/card/?id=${modalFocus.id}&origin=giveaways`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
                 useRefreshToken={bootMode === "refresh-token"}
@@ -120,7 +120,7 @@ export const Rewards = () => {
             )}
             {modalFocus?.type === "reward" && (
               <BridgedIframe
-                src={appendUrlParams(`${smartComponentsHost}/reward/?id=${modalFocus.id}&origin=rewards`)}
+                src={appendUrlParams(`${smartComponentsHost}/reward/?id=${modalFocus.id}&origin=giveaways`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
                 useRefreshToken={bootMode === "refresh-token"}
@@ -128,7 +128,7 @@ export const Rewards = () => {
             )}
             {modalFocus?.type === "wearable" && (
               <BridgedIframe
-                src={appendUrlParams(`${smartComponentsHost}/wearable/?id=${modalFocus.id}&origin=rewards`)}
+                src={appendUrlParams(`${smartComponentsHost}/wearable/?id=${modalFocus.id}&origin=giveaways`)}
                 className="w-full h-full rounded-lg shadow-2xl border-0"
                 onNavigation={onNavigation}
                 useRefreshToken={bootMode === "refresh-token"}

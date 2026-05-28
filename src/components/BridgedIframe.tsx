@@ -6,7 +6,8 @@ import {
   forwardRef,
   useCallback,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
+import { useApp } from "../context/AppContext";
 import { authService } from "../services/authService";
 import ParentBridge from "@/types/smt-base-bridge/parent-bridge";
 import Swal from "sweetalert2";
@@ -27,6 +28,7 @@ interface BridgedIframeProps {
   className?: string;
   useRefreshToken?: boolean;
   sizeToContent?: boolean;
+  componentConfig?: Record<string, unknown>;
   onNavigation?: (
     feature: string,
     focus?: string,
@@ -44,22 +46,53 @@ interface BridgedIframeProps {
 }
 
 export interface BridgedIframeHandle {
+  // Convenience helpers for pages that need to talk to an already-mounted child iframe.
   goTo: (params: {
     feature: string;
     focus?: string;
     extra?: string;
     params?: Record<string, any>;
   }) => Promise<unknown>;
+  request: <TResult = unknown>(
+    name: string,
+    payload?: Record<string, any>,
+  ) => Promise<TResult>;
 }
 
 export const BridgedIframe = forwardRef<
   BridgedIframeHandle,
   BridgedIframeProps
->(({ src, className, onNavigation, useRefreshToken, sizeToContent }, ref) => {
+>(
+  ({ src, className, onNavigation, useRefreshToken, sizeToContent, componentConfig }, ref) => {
+  const {
+    suppressReferrer,
+    setMapQueryParams,
+    mapIframeHandle,
+    setPendingMapCommand,
+  } = useApp();
   const [iframe, setIframe] = useState<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<ParentBridge | null>(null);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
+  const [iframeLoaded, setIframeLoaded] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const locationRef = useRef(location);
+  useEffect(() => {
+    locationRef.current = location;
+  }, [location]);
+  const onNavigationRef = useRef(onNavigation);
+  const useRefreshTokenRef = useRef(useRefreshToken);
+  const componentConfigRef = useRef(componentConfig);
+  // Keep the latest props available to bridge handlers without tearing down the bridge.
+  useEffect(() => {
+    onNavigationRef.current = onNavigation;
+  }, [onNavigation]);
+  useEffect(() => {
+    useRefreshTokenRef.current = useRefreshToken;
+  }, [useRefreshToken]);
+  useEffect(() => {
+    componentConfigRef.current = componentConfig;
+  }, [componentConfig]);
 
  const getCookie = (name: string): string | null => {
   const match = document.cookie.match(
@@ -95,6 +128,16 @@ const checkOneTrustConsent = useCallback((): {
     isReady: hasInteracted,
   };
 }, []);
+
+const isBridgeErrorCode = (error: unknown, code: string): error is { code: string } => {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    (error as { code?: unknown }).code === code
+  );
+};
+
   // Send consent update to child iframe
   const sendConsentUpdate = useCallback(() => {
     if (!bridgeRef.current) return;
@@ -102,11 +145,16 @@ const checkOneTrustConsent = useCallback((): {
     const consentStatus = checkOneTrustConsent();
     console.log("Sending consent update to child:", consentStatus);
 
-    try {
-      bridgeRef.current.sendRequest("tracking.consent.update", consentStatus);
-    } catch (error) {
-      console.error("Error sending consent update:", error);
-    }
+    void bridgeRef.current
+      .sendRequest("tracking.consent.update", consentStatus)
+      .catch((error: unknown) => {
+        if (isBridgeErrorCode(error, "NOT_SUPPORTED")) {
+          console.log("Child iframe does not support tracking.consent.update");
+          return;
+        }
+
+        console.error("Error sending consent update:", error);
+      });
   }, [checkOneTrustConsent]);
 
   const setIframeRef = useCallback(
@@ -155,28 +203,32 @@ const checkOneTrustConsent = useCallback((): {
 
     const BridgeError = window.SMTBaseBridge.BridgeError;
     const childOrigin = new URL(src);
-    console.log("parent", childOrigin.origin);
-    // Create bridge using ParentBridge constructor
+    // Create the bridge before setting iframe src so the child can request data immediately on load.
     const bridge = new window.SMTBaseBridge.ParentBridge(iframe, {
       origin: childOrigin.origin,
       meta: {},
     });
     bridgeRef.current = bridge;
 
-    // Register tracking.consent.request handler
+    // Core bridge handlers expose shared host capabilities to every component.
     bridge.addRequestHandler("tracking.consent.request", async () => {
       const consentStatus = checkOneTrustConsent();
-      console.log("tracking.consent.request called, returning:", consentStatus);
+      console.log("[ComponentBridge] 'tracking.consent.request' called, returning:", consentStatus);
       return consentStatus;
     });
 
-    // Register session.get handler
+    // Components can pull their initial host-owned config on startup.
+    bridge.addRequestHandler("component.config.get", async () => {
+      return componentConfigRef.current ?? {};
+    });
+
+    // Child components ask the host for auth instead of owning tokens directly.
     bridge.addRequestHandler("session.get", async () => {
       // Access token or refresh token is supported
-      if (useRefreshToken) {
+      if (useRefreshTokenRef.current) {
         const refreshToken = authService.getRefreshToken();
         console.log(
-          "session.get called, returning refreshToken:",
+          "[ComponentBridge] 'session.get' called, returning refreshToken:",
           refreshToken ? "present" : "null",
         );
         return { refreshToken };
@@ -184,30 +236,111 @@ const checkOneTrustConsent = useCallback((): {
         //If returning Access token, you are expected to manage the refresh token life cycle
         const accessToken = await authService.getAccessToken();
         console.log(
-          "session.get called, returning accessToken:",
+          "[ComponentBridge] 'session.get' called, returning accessToken:",
           accessToken ? "present" : "null",
         );
         return { accessToken };
       }
     });
 
-    // Register session.clear handler
+    // Embedded logout is routed back through the host app.
     bridge.addRequestHandler("session.clear", async () => {
-      console.log("session.clear called");
+      console.log("[ComponentBridge] 'session.clear' called");
       await authService.logout();
       navigate("/login");
       return {};
     });
 
     bridge.addRequestHandler("navigation.go", async ({ payload }) => {
+      console.log("[ComponentBridge] 'navigation.go' called with params:", payload);
       const { feature, focus, extra, params } = payload as {
         feature: string;
         focus: string;
         extra: string;
         params: Record<string, any>;
       };
-      if (onNavigation) {
-        return (await onNavigation?.(feature, focus, extra, params)) ?? {};
+      if (onNavigationRef.current) {
+        const result = await onNavigationRef.current(feature, focus, extra, params);
+        if (result !== undefined) return result;
+        // undefined = page didn't handle it, fall through to default
+      }
+      if (feature === "map") {
+        // The map uses URL params for initial state and dedicated map.* commands for live actions.
+        const lat = Number.parseFloat(String(params?.lat));
+        const lon = Number.parseFloat(String(params?.lon));
+        const zoom = Number.parseFloat(String(params?.zoom));
+        const hasCoordinates = Number.isFinite(lat) && Number.isFinite(lon);
+        const hasZoom = Number.isFinite(zoom);
+        const wantsUserLocation =
+          params?.userLocation === true || params?.userLocation === "true";
+
+        if (locationRef.current.pathname === "/map") {
+          if (wantsUserLocation) {
+            if (mapIframeHandle) {
+              try {
+                await mapIframeHandle.request("map.userLocation.focus", {
+                  ...(hasZoom ? { zoom } : {}),
+                });
+                return {};
+              } catch (error) {
+                console.warn("map.userLocation.focus failed", error);
+              }
+            }
+            // If the iframe is not ready yet, queue a one-shot command for the map page to consume.
+            setPendingMapCommand({
+              type: "user-location",
+              ...(hasZoom ? { zoom } : {}),
+            });
+            return {};
+          }
+
+          if (hasCoordinates) {
+            if (mapIframeHandle) {
+              try {
+                await mapIframeHandle.request("map.viewport.set", {
+                  center: { latitude: lat, longitude: lon },
+                  ...(hasZoom ? { zoom } : {}),
+                });
+                return {};
+              } catch (error) {
+                console.warn("map.viewport.set failed", error);
+              }
+            }
+            // If the iframe is not ready yet, queue a one-shot viewport command for the map page to consume.
+            setPendingMapCommand({
+              type: "viewport",
+              center: { latitude: lat, longitude: lon },
+              ...(hasZoom ? { zoom } : {}),
+            });
+            return {};
+          }
+
+          navigate("/map");
+          return {};
+        }
+
+        if (wantsUserLocation) {
+          setPendingMapCommand({
+            type: "user-location",
+            ...(hasZoom ? { zoom } : {}),
+          });
+          navigate("/map");
+          return {};
+        }
+
+        if (hasCoordinates) {
+          // When opening the map page from elsewhere, carry initial viewport through the URL.
+          setMapQueryParams({
+            lat,
+            lon,
+            ...(hasZoom ? { zoom } : {}),
+          });
+          navigate("/map");
+          return {};
+        }
+
+        navigate("/map");
+        return {};
       }
       if (
         feature === "ar" ||
@@ -224,12 +357,14 @@ const checkOneTrustConsent = useCallback((): {
     });
 
     bridge.addRequestHandler("navigation.open", async ({ payload }) => {
+      console.log("[ComponentBridge] 'navigation.open' called with params:", payload);
       const { url } = payload ?? {};
       window.open(url, "_blank");
       return {};
     });
 
-    // Register alert handlers - not supported, return bridge error
+
+    // Return a bridge error for host features this example container does not implement.
     bridge.addRequestHandler("alert.notify", async () => {
       return new BridgeError("NOT_SUPPORTED", "alert.notify is not supported");
     });
@@ -249,7 +384,7 @@ const checkOneTrustConsent = useCallback((): {
       return new BridgeError("NOT_SUPPORTED", "alert.inform is not supported");
     });
 
-    // Register loader handlers
+    // The child can ask the host to present a full-page loading state.
     bridge.addRequestHandler("loader.show", async ({ payload }) => {
       const { label } = payload as { label: string };
 
@@ -272,7 +407,7 @@ const checkOneTrustConsent = useCallback((): {
       return {};
     });
 
-    // Register frame.resize handler
+    // Inline components can request height changes when sizeToContent is enabled.
     bridge.addRequestHandler("frame.resize", async ({ payload }) => {
       if (!sizeToContent) {
         return new BridgeError(
@@ -299,7 +434,8 @@ const checkOneTrustConsent = useCallback((): {
 
     console.log("Bridge handlers registered successfully");
 
-    // Now that bridge is configured, set the iframe src
+    // Only start loading the child once all handlers are in place.
+    setIframeLoaded(false);
     setIframeSrc(src);
 
     // Send initial consent status once bridge is ready
@@ -312,7 +448,9 @@ const checkOneTrustConsent = useCallback((): {
     return () => {
       clearTimeout(consentTimer);
       if (bridge) {
+        bridge.sendRequest("session.clear", {}).catch(() => {});
         bridge.removeRequestHandler("tracking.consent.request");
+        bridge.removeRequestHandler("component.config.get");
         bridge.removeRequestHandler("session.get");
         bridge.removeRequestHandler("session.clear");
         bridge.removeRequestHandler("navigation.go");
@@ -336,13 +474,28 @@ const checkOneTrustConsent = useCallback((): {
     src,
     navigate,
     iframe,
-    onNavigation,
     sizeToContent,
+    useRefreshToken,
     checkOneTrustConsent,
     sendConsentUpdate,
+    setMapQueryParams,
+    mapIframeHandle,
+    setPendingMapCommand,
   ]);
 
-  // Expose goTo function via ref
+  useEffect(() => {
+    if (!bridgeRef.current || !iframeSrc || !iframeLoaded) {
+      return;
+    }
+
+    // Live config updates are replay-safe, so they are pushed whenever the prop changes.
+    bridgeRef.current
+      .sendRequest("component.config.update", componentConfig ?? {})
+      .catch((error) => {
+        console.warn("component.config.update failed", error);
+      });
+  }, [componentConfig, iframeSrc, iframeLoaded]);
+
   useImperativeHandle(ref, () => ({
     goTo: async (params: {
       feature: string;
@@ -353,19 +506,34 @@ const checkOneTrustConsent = useCallback((): {
       if (!bridgeRef.current) {
         throw new Error("Bridge not initialized");
       }
+      // navigation.go is the generic route-level request shared by components.
       return bridgeRef.current.sendRequest("navigation.go", params);
     },
-  }));
+    request: async <TResult = unknown>(
+      name: string,
+      payload: Record<string, any> = {},
+    ): Promise<TResult> => {
+      if (!bridgeRef.current) {
+        throw new Error("Bridge not initialized");
+      }
+      // request() exposes namespaced component-specific commands such as map.viewport.set.
+      return bridgeRef.current.sendRequest(name, payload) as Promise<TResult>;
+    },
+  }), []);
 
   return (
     <iframe
+      key={`${String(useRefreshToken)}-${String(suppressReferrer)}`}
       ref={setIframeRef}
       src={iframeSrc || undefined}
       className={className}
       title="Embedded Content"
+      onLoad={() => setIframeLoaded(true)}
       allow="geolocation; camera; microphone; fullscreen; autoplay; clipboard-write; encrypted-media; gyroscope; accelerometer; web-share; xr-spatial-tracking"
+      referrerPolicy={suppressReferrer ? "no-referrer" : undefined}
     />
   );
-});
+  },
+);
 
 BridgedIframe.displayName = "BridgedIframe";
