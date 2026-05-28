@@ -8,7 +8,7 @@ This example showcases:
 
 - **User Authentication**: Login flow with email/password
 - **Auth Token Passing**: Securely passing tokens to embedded components
-- **Isolated Embeddable Components**: Standalone components that can be embedded independently (Discover, Challenges, Card, Reward, AR Wearable, Map)
+- **Isolated Embeddable Components**: Standalone components that can be embedded independently (Discover, Challenges, Card, Reward, Giveaways, AR Wearable, Map)
 - **Modal Navigation**: Opening detailed views in modals with navigation handling
 - **Bridge Communication**: Two-way communication using the `smt-base-bridge` library
 - **Logout Handling**: Coordinated logout between container and embedded components
@@ -77,6 +77,7 @@ Displays the user's rewards, including rewards they have acquired and can claim.
 **Component-specific notes**:
 
 - Optionally handle `navigation.go` if you want to open reward, card, or wearable details in host-controlled modals
+- When a user redeems a reward that costs points, a confirmation dialog is shown within the embedded component before the transaction proceeds — no bridge interaction is needed
 - Consider `sizeToContent` when embedding inline in a scrolling page
 
 ### Challenges Component
@@ -88,6 +89,18 @@ Displays challenges that the user has started and their progress. Supports navig
 **Component-specific notes**:
 
 - Optionally handle `navigation.go` if you want to open engaged card details in a host-controlled modal
+- Consider `sizeToContent` when embedding inline in a scrolling page
+
+### Giveaways Component
+
+Displays promotions such as sweepstakes, contests, and games that are not directly affiliated with the rewards program. Includes two tabs: **Giveaways** for active promotions and **My Prizes** for prizes the user has won.
+
+**URL**: `https://{componentsHost}/giveaways/`
+
+**Component-specific notes**:
+
+- Each giveaway card has an optional `cta` property — when set to an HTTPS URL it opens externally, when set to a deep link it navigates internally, and when empty the card is rendered without a clickable action
+- No additional bridge handlers are required beyond the standard set
 - Consider `sizeToContent` when embedding inline in a scrolling page
 
 ### Card Component
@@ -212,7 +225,7 @@ Language codes must use an **ISO 639-1 language code** with an optional **ISO 31
 - `fr` - French (generic)
 - `de` - German
 
-The specific languages supported depend on your configuration. Contact **SMT (Smart Media Technologies)** for the complete list of supported languages.
+The following languages are currently supported: `ar`, `da`, `de`, `en`, `es`, `fr`, `id`, `it`, `ja`, `ko`, `nl`, `pt`.
 
 ### Usage Examples
 
@@ -897,7 +910,7 @@ Components host: `https://embedded.smartmedialabs.io/fifasandbox.beta/components
 
 Components host: `https://embedded.smtwallet.app/fifa/sandbox/components`
 
-Available components: `/discover/`, `/rewards/`, `/challenges/`, `/card/?id={cardId}`, `/reward/?id={rewardId}`, `/wearable/?id={wearableId}`, `/map/`
+Available components: `/discover/`, `/rewards/`, `/challenges/`, `/giveaways/`, `/card/?id={cardId}`, `/reward/?id={rewardId}`, `/wearable/?id={wearableId}`, `/map/`
 
 #### Test Environment
 
