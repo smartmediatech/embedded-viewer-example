@@ -1,5 +1,9 @@
-import { useCallback, useEffect } from "react";
-import { BridgedIframe, BridgedIframeHandle } from "../components/BridgedIframe";
+import { useCallback, useEffect, useState } from "react";
+import {
+  BridgedIframe,
+  BridgedIframeHandle,
+  InteractionBridgePayload,
+} from "../components/BridgedIframe";
 import { useApp } from "../context/AppContext";
 
 export const Map = () => {
@@ -16,6 +20,7 @@ export const Map = () => {
     bootMode,
   } = useApp();
 
+  const [interactions, setInteractions] = useState<InteractionBridgePayload[]>([]);
   const handleRef = useCallback(
     (handle: BridgedIframeHandle | null) => {
       setMapIframeHandle(handle);
@@ -73,15 +78,52 @@ export const Map = () => {
     };
   }, [pendingMapCommand, clearPendingMapCommand, mapIframeHandle]);
 
+  const handleInteraction = useCallback((payload: InteractionBridgePayload) => {
+    setInteractions((actions) => [payload, ...actions].slice(0, 5));
+  }, []);
+
   return (
-    <>
+    <div className="relative flex flex-col min-h-0 grow">
       <BridgedIframe
         ref={handleRef}
         src={src}
         className="w-full h-full rounded-lg shadow-lg border-0 grow"
         componentConfig={mapComponentConfig}
         useRefreshToken={bootMode === "refresh-token"}
+        onInteraction={handleInteraction}
       />
-    </>
+      {interactions.length > 0 ? (
+        <section className="absolute right-4 top-4 z-10 w-[min(22rem,calc(100%-2rem))] rounded-md border border-slate-200 bg-white/95 p-3 text-sm text-slate-900 shadow-lg">
+          <h2 className="mb-2 text-sm font-semibold">Latest interactions</h2>
+          <ol className="space-y-2">
+            {interactions.map((event, index) => (
+              <li
+                key={`${event.eventId}-${event.status}-${index}`}
+                className="rounded border border-slate-100 bg-slate-50 px-2 py-1"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <span className="font-medium capitalize">{event.action}</span>
+                  <span className="text-xs uppercase tracking-wide text-slate-500">
+                    {event.status}
+                  </span>
+                </div>
+                <div className="truncate text-xs text-slate-600">{event.smtId}</div>
+                <div className="truncate text-xs text-slate-500">{event.eventId}</div>
+                {event.error?.requestId ? (
+                  <div className="truncate text-xs text-red-700">
+                    Request {event.error.requestId}
+                  </div>
+                ) : null}
+                {event.location ? (
+                  <div className="text-xs text-slate-600">
+                    {event.location.lat.toFixed(5)}, {event.location.lon.toFixed(5)}
+                  </div>
+                ) : null}
+              </li>
+            ))}
+          </ol>
+        </section>
+      ) : null}
+    </div>
   );
 };

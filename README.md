@@ -153,6 +153,45 @@ The example app demonstrates a simple light/dark theme toggle using:
 - `component.config.get` for the initial config
 - `component.config.update` for live theme changes
 
+Components notify the host when user interactions (pickup, drop, AR handoff) occur:
+
+- Message: `interaction`
+- Direction: iframe to host
+- Action values: `pickup` or `drop`
+- Status values: `started`, `completed`, `failed`, or `cancelled`
+- `eventId` identifies one interaction attempt across status updates
+- `smtId` identifies the SMT/vatom being acted on
+- Optional fields may be added later; consumers should ignore unknown fields
+
+Example payload:
+
+```typescript
+type InteractionBridgePayload = {
+  eventId: string;
+  action: "pickup" | "drop";
+  status: "started" | "completed" | "failed" | "cancelled";
+  smtId: string;
+  context?: "map" | "ar-world" | "ar-engaged" | "unknown";
+  location?: {
+    lat: number;
+    lon: number;
+  };
+  error?: {
+    message: string;
+    requestId?: string | number;
+  };
+};
+```
+
+Host handler:
+
+```typescript
+bridge.addRequestHandler("interaction", async ({ payload }) => {
+  console.log("Interaction:", payload);
+  return {};
+});
+```
+
 Current config shape:
 
 ```typescript
